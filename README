@@ -1,0 +1,8 @@
+#
+# this is a follow-up for 
+# comp.lang.c++.moderated discussion
+# "Access Data Items In Ancestor Stack Frames Safely (Dr.Dobb's article)"
+# (http://groups.google.com/group/comp.lang.c++.moderated/browse_frm/thread/a678d70370061318?hl=de#)
+#
+# Trying now to model something for Red-Black Trees
+#
