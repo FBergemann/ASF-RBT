@@ -244,31 +244,6 @@ struct RbtNode {
 		assert(GetColor(root) == BLACK);
 	}
 
-#if 0
-
-	// original version
-	static void verify_property_4(
-			RbtNode * n)
-	{
-		if (n == NULL)
-		{
-			return;
-		}
-
-		std::cout << "### verify node with key " << n->key << std::endl;
-
-		if (GetColor(n) == RED)
-		{
-			assert (GetColor(n->left)   == BLACK);
-			assert (GetColor(n->right)  == BLACK);
-			assert (GetColor(n->parent) == BLACK); // want to make this obsolete
-		}
-		verify_property_4(n->left);
-		verify_property_4(n->right);
-	}
-
-#else
-
 	// new version
 	static void verify_property_4(
 			RbtNode * n)
@@ -306,8 +281,6 @@ struct RbtNode {
 
 		RH_verify_property_4().exec(NULL, n);
 	}
-
-#endif
 
 	static void verify_property_5_helper(
 			RbtNode * n,
@@ -382,7 +355,6 @@ struct RbtNode {
 				current_node->value = node_to_insert->value;
 				/* inserted_node isn't going to be used, don't leak it */
 				delete node_to_insert;
-				return;
 			}
 			else if (comp_result < 0)
 			{
