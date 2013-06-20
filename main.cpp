@@ -159,59 +159,6 @@ struct RbtNode {
 		this->parent = L;
 	}
 
-	void insert_postprocess(
-			RbtNode *& root)
-	{
-		if (this->parent == NULL)
-		{
-			this->color = BLACK;
-		}
-		else if (this->parent->color == BLACK)
-		{
-			return; /* Tree is still valid */
-		}
-		else if (GetColor(this->uncle()) == RED)
-		{
-			this->parent->color = BLACK;
-			this->uncle()->color = BLACK;
-			this->grandparent()->color = RED;
-			this->grandparent()->insert_postprocess(root); // pop->pop->again
-		}
-		else
-		{
-			if (this == this->parent->right && this->parent == this->grandparent()->left)
-			{
-				this->parent->rotate_left(root);
-				this->left->insert_postprocess2(root);
-			}
-			else if (this == this->parent->left && this->parent == this->grandparent()->right)
-			{
-				this->parent->rotate_right(root);
-				this->right->insert_postprocess2(root);
-			}
-			else
-			{
-				this->insert_postprocess2(root);
-			}
-		}
-	}
-
-	void insert_postprocess2(
-			RbtNode *& root)
-	{
-		this->parent->color = BLACK;
-		this->grandparent()->color = RED;
-
-		if (this == this->parent->left && this->parent == this->grandparent()->left)
-		{
-			this->grandparent()->rotate_right(root);
-		}
-		else
-		{
-			this->grandparent()->rotate_left(root);
-		}
-	}
-
 	static int compare(
 			KEY const & left,
 			KEY const & right)
@@ -261,7 +208,7 @@ struct RbtNode {
 					return;
 				}
 
-				std::cout << "### verify node with key " << n->key << std::endl;
+				// std::cout << "### verify node with key " << n->key << std::endl;
 
 				stack_n = n;
 
@@ -345,10 +292,72 @@ struct RbtNode {
 #endif
 		}
 
-		void insert_recursive(
+		void insert_postprocess2(
+				RbtNode * current_node,
+				RbtNode *& root)
+		{
+			current_node->parent->color = BLACK;
+			current_node->grandparent()->color = RED;
+
+			if (current_node == current_node->parent->left && current_node->parent == current_node->grandparent()->left)
+			{
+				current_node->grandparent()->rotate_right(root);
+			}
+			else
+			{
+				current_node->grandparent()->rotate_left(root);
+			}
+		}
+
+		int insert_postprocess(
+				RbtNode * current_node,
+				RbtNode *& root)
+		{
+			int ret = -1;
+
+			if (current_node->parent == NULL)
+			{
+				current_node->color = BLACK;
+			}
+			else if (current_node->parent->color == BLACK)
+			{
+				; /* Tree is still valid */
+			}
+			else if (GetColor(current_node->uncle()) == RED)
+			{
+				current_node->parent->color = BLACK;
+				current_node->uncle()->color = BLACK;
+				current_node->grandparent()->color = RED;
+
+				ret = 2; // do again two levels back in recursion
+			}
+			else
+			{
+				if (current_node == current_node->parent->right && current_node->parent == current_node->grandparent()->left)
+				{
+					current_node->parent->rotate_left(root);
+					insert_postprocess2(current_node->left, root);
+				}
+				else if (current_node == current_node->parent->left && current_node->parent == current_node->grandparent()->right)
+				{
+					current_node->parent->rotate_right(root);
+					insert_postprocess2(current_node->right, root);
+				}
+				else
+				{
+					insert_postprocess2(current_node, root);
+				}
+			}
+
+			return ret;
+		}
+
+		int insert_recursive(
 			RbtNode * current_node,
 			RbtNode * node_to_insert)
 		{
+			int ret = -1;
+
 			int comp_result = compare(node_to_insert->key, current_node->key);
 			if (comp_result == 0)
 			{
@@ -362,11 +371,11 @@ struct RbtNode {
 				{
 					current_node->left = node_to_insert;
 					node_to_insert->parent = current_node;	// TODO: temporary
-					node_to_insert->insert_postprocess(this->root);
+					ret = insert_postprocess(node_to_insert, this->root);
 				}
 				else
 				{
-					insert_recursive(current_node->left, node_to_insert);
+					ret = insert_recursive(current_node->left, node_to_insert);
 				}
 			}
 			else
@@ -375,14 +384,24 @@ struct RbtNode {
 				{
 					current_node->right = node_to_insert;
 					node_to_insert->parent = current_node;	// TODO: temporary
-					node_to_insert->insert_postprocess(this->root);
+					ret = insert_postprocess(node_to_insert, this->root);
 				}
 				else
 				{
-					insert_recursive(current_node->right, node_to_insert);
+					ret = insert_recursive(current_node->right, node_to_insert);
 				}
 			}
 
+			if (1 == ret)
+			{
+				ret = insert_postprocess(current_node, root);
+			}
+			else if (ret >= 0)
+			{
+				ret = ret - 1;
+			}
+
+			return ret;
 		}
 
 		void insert(
@@ -393,7 +412,7 @@ struct RbtNode {
 			if (this->root == NULL)
 			{
 				this->root = node_to_insert;
-				node_to_insert->insert_postprocess(this->root);
+				this->root->color = BLACK;
 			}
 			else
 			{
