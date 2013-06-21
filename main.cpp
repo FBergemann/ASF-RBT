@@ -381,9 +381,8 @@ struct RbtNode {
 					{
 						if (current(caller) == parent(caller)->right)
 						{
-							RbtNode * save = current(caller)->left;
 							current(caller)->rotate_right(root);
-							insert_postop2(caller, save->right, root);
+ 							insert_postop2(caller, current(caller), root);
 						}
 						else
 						{
@@ -416,9 +415,8 @@ struct RbtNode {
 					{
 						if (current(caller) == parent(caller)->left)
 						{
-							RbtNode * save = current(caller)->right;
 							current(caller)->rotate_left(root);
-							insert_postop2(caller, save->left, root);
+							insert_postop2(caller, current(caller), root);
 						}
 						else
 						{
