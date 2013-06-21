@@ -1,15 +1,16 @@
 #
-# this is a follow-up for 
-# comp.lang.c++.moderated discussion
+# This is inspired by some article in Dr.Dobb's pages 
+# "Access Data Items In Ancestor Stack Frames Safely" 
+# (http://www.drdobbs.com/cpp/access-data-items-in-ancestor-stack-fram/240155450), 
+#
+# Then there was a discussion in comp.lang.c++.moderated
 # "Access Data Items In Ancestor Stack Frames Safely (Dr.Dobb's article)"
 # (http://groups.google.com/group/comp.lang.c++.moderated/browse_frm/thread/a678d70370061318?hl=de#)
 #
-# Trying now to model something for Red-Black Trees
-#
-# it started by taking a red-black tree implementation from here: 
+# Trying now to model something for Red-Black Trees here.
+# Started by taking a red-black tree implementation from here: 
 # http://en.literateprograms.org/Red-black_tree_%28C%29
-#
-# transmogrified that into C++ 
-# now trying to make obsolete the need for a *parent ptr
-# by what was discussed in comp.lang.c++.moderated
+# Transmogrified that into C++.
+# Now trying to make obsolete the need for a *parent ptr
+# by what was discussed in comp.lang.c++.moderated.
 #
