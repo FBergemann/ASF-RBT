@@ -1,7 +1,7 @@
 #
 # This is inspired by some article in Dr.Dobb's pages 
 # "Access Data Items In Ancestor Stack Frames Safely" 
-# (http://www.drdobbs.com/cpp/access-data-items-in-ancestor-stack-fram/240155450), 
+# (http://www.drdobbs.com/cpp/access-data-items-in-ancestor-stack-fram/240155450)
 #
 # Then there was a discussion in comp.lang.c++.moderated
 # "Access Data Items In Ancestor Stack Frames Safely (Dr.Dobb's article)"
