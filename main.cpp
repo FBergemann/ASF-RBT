@@ -341,7 +341,7 @@ struct RbtNode {
 					return sibling(caller->stack_c);
 				}
 
-				void insert_postprocess2(
+				void insert_postop2(
 						Caller * caller,
 						RbtNode * current_node,
 						RbtNode *& root)
@@ -359,7 +359,77 @@ struct RbtNode {
 					}
 				}
 
-				int insert_postprocess(
+				int insert_postop1_l(
+						Caller * caller,
+						RbtNode *& root)
+				{
+					int ret = -1;
+
+					if (current(caller)->color == BLACK)
+					{
+						; /* Tree is still valid */
+					}
+					else if (RbtNode::GetColor(sibling(caller)) == RED)
+					{
+						current(caller)->color = BLACK;
+						sibling(caller)->color = BLACK;
+						parent(caller)->color = RED;
+
+						ret = 2; // do again two levels back in recursion
+					}
+					else
+					{
+						if (current(caller) == parent(caller)->right)
+						{
+							RbtNode * save = current(caller)->left;
+							current(caller)->rotate_right(root);
+							insert_postop2(caller, save->right, root);
+						}
+						else
+						{
+							insert_postop2(caller, current(caller)->left, root);
+						}
+					}
+
+					return ret;
+				}
+
+				int insert_postop1_r(
+						Caller * caller,
+						RbtNode *& root)
+				{
+					int ret = -1;
+
+					if (current(caller)->color == BLACK)
+					{
+						; /* Tree is still valid */
+					}
+					else if (RbtNode::GetColor(sibling(caller)) == RED)
+					{
+						current(caller)->color = BLACK;
+						sibling(caller)->color = BLACK;
+						parent(caller)->color = RED;
+
+						ret = 2; // do again two levels back in recursion
+					}
+					else
+					{
+						if (current(caller) == parent(caller)->left)
+						{
+							RbtNode * save = current(caller)->right;
+							current(caller)->rotate_left(root);
+							insert_postop2(caller, save->left, root);
+						}
+						else
+						{
+							insert_postop2(caller, current(caller)->right, root);
+						}
+					}
+
+					return ret;
+				}
+
+				int insert_postop1(
 						Caller * caller,
 						RbtNode *& root)
 				{
@@ -386,86 +456,16 @@ struct RbtNode {
 						if (current(caller) == parent(caller)->right && parent(caller) == grandparent(caller)->left)
 						{
 							parent(caller)->rotate_left(root);
-							insert_postprocess2(caller, current(caller)->left, root);
+							insert_postop2(caller, current(caller)->left, root);
 						}
 						else if (current(caller) == parent(caller)->left && parent(caller) == grandparent(caller)->right)
 						{
 							parent(caller)->rotate_right(root);
-							insert_postprocess2(caller, current(caller)->right, root);
+							insert_postop2(caller, current(caller)->right, root);
 						}
 						else
 						{
-							insert_postprocess2(caller, current(caller), root);
-						}
-					}
-
-					return ret;
-				}
-
-				int insert_postprocess_l(
-						Caller * caller,
-						RbtNode *& root)
-				{
-					int ret = -1;
-
-					if (current(caller)->color == BLACK)
-					{
-						; /* Tree is still valid */
-					}
-					else if (RbtNode::GetColor(sibling(caller)) == RED)
-					{
-						current(caller)->color = BLACK;
-						sibling(caller)->color = BLACK;
-						parent(caller)->color = RED;
-
-						ret = 2; // do again two levels back in recursion
-					}
-					else
-					{
-						if (current(caller) == parent(caller)->right)
-						{
-							RbtNode * save = current(caller)->left;
-							current(caller)->rotate_right(root);
-							insert_postprocess2(caller, save->right, root);
-						}
-						else
-						{
-							insert_postprocess2(caller, current(caller)->left, root);
-						}
-					}
-
-					return ret;
-				}
-
-				int insert_postprocess_r(
-						Caller * caller,
-						RbtNode *& root)
-				{
-					int ret = -1;
-
-					if (current(caller)->color == BLACK)
-					{
-						; /* Tree is still valid */
-					}
-					else if (RbtNode::GetColor(sibling(caller)) == RED)
-					{
-						current(caller)->color = BLACK;
-						sibling(caller)->color = BLACK;
-						parent(caller)->color = RED;
-
-						ret = 2; // do again two levels back in recursion
-					}
-					else
-					{
-						if (current(caller) == parent(caller)->left)
-						{
-							RbtNode * save = current(caller)->right;
-							current(caller)->rotate_left(root);
-							insert_postprocess2(caller, save->left, root);
-						}
-						else
-						{
-							insert_postprocess2(caller, current(caller)->right, root);
+							insert_postop2(caller, current(caller), root);
 						}
 					}
 
@@ -496,7 +496,7 @@ struct RbtNode {
 						{
 							stack_n->left = node_to_insert;
 							node_to_insert->parent = stack_n;	// TODO: temporary
-							ret = insert_postprocess_l(this, root_node);
+							ret = insert_postop1_l(this, root_node);
 						}
 						else
 						{
@@ -509,7 +509,7 @@ struct RbtNode {
 						{
 							stack_n->right = node_to_insert;
 							node_to_insert->parent = stack_n;	// TODO: temporary
-							ret = insert_postprocess_r(this, root_node);
+							ret = insert_postop1_r(this, root_node);
 						}
 						else
 						{
@@ -519,7 +519,7 @@ struct RbtNode {
 
 					if (1 == ret)
 					{
-						ret = insert_postprocess(this, root_node);
+						ret = insert_postop1(this, root_node);
 					}
 					else if (ret >= 0)
 					{
