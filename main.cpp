@@ -79,6 +79,19 @@ struct RbtNode {
 		return (n == NULL)?BLACK:n->color;
 	}
 
+	void MakeRed(void)
+	{
+	    this->color = RED;
+	    if (this->right != NULL)
+	    {
+	        this->right->color = BLACK;
+	    }
+	    if (this->left != NULL)
+	    {
+	        this->left->color = BLACK;
+	    }
+	}
+
 	// Recursion Helper Base Class
 	template <typename CALLER>
 	struct RH_Base
@@ -93,25 +106,25 @@ struct RbtNode {
 		  stack_n(node)
 		{ }
 
-		inline RbtNode * current(void)
+		inline RbtNode * & current(void)
 		{
 			return stack_n;
 		}
 
-		inline RbtNode * parent(void)
+		inline RbtNode * & parent(void)
 		{
 			assert(stack_c != NULL);
 			return stack_c->stack_n;
 		}
 
-		inline RbtNode * grandparent(void)
+		inline RbtNode * & grandparent(void)
 		{
 			assert(stack_c != NULL);
 			assert(stack_c->stack_c != NULL);
 			return stack_c->stack_c->stack_n;
 		}
 
-		inline RbtNode * sibling(void)
+		inline RbtNode * & sibling(void)
 		{
 			RbtNode * parent_node = parent();
 
@@ -127,9 +140,11 @@ struct RbtNode {
 			}
 		}
 
-		inline RbtNode * uncle(void)
+		inline RbtNode * & uncle(void)
 		{
 			RbtNode * grandparent_node = grandparent();
+
+			assert(grandparent_node != NULL);
 
 			if (parent() == grandparent_node->left)
 			{
@@ -250,17 +265,17 @@ struct RbtNode {
 
 			// std::cout << "### verify node with key " << n->key << std::endl;
 
-			if (RbtNode::GetColor(this->stack_n) == RED)
+			if (RbtNode::GetColor(this->current()) == RED)
 			{
-				assert (RbtNode::GetColor(this->stack_n->left)   == BLACK);
-				assert (RbtNode::GetColor(this->stack_n->right)  == BLACK);
+				assert (RbtNode::GetColor(this->current()->left)   == BLACK);
+				assert (RbtNode::GetColor(this->current()->right)  == BLACK);
 				if (this->stack_c != NULL)
 				{
 					assert (RbtNode::GetColor(this->stack_c->stack_n) == BLACK);
 				}
 			}
-			Caller(this, this->stack_n->left).exec();
-			Caller(this, this->stack_n->right).exec();
+			Caller(this, this->current()->left).exec();
+			Caller(this, this->current()->right).exec();
 		}
 	};
 
@@ -375,10 +390,7 @@ struct RbtNode {
 				}
 				else if (RbtNode::GetColor(this->sibling()) == RED)
 				{
-					this->current()->color = BLACK;
-					this->sibling()->color = BLACK;
-					this->parent()->color = RED;
-
+					this->parent()->MakeRed();
 					ret = 2; // do again two levels back in recursion
 				}
 				else
@@ -387,7 +399,7 @@ struct RbtNode {
 					{
 						RbtNode *save = this->current()->left;
 						this->current()->rotate_right(root);
-						std::swap(this->stack_n, save);
+						std::swap(this->current(), save);
 						Caller(this, save).insert_postop2(root);
 					}
 					else
@@ -410,10 +422,7 @@ struct RbtNode {
 				}
 				else if (RbtNode::GetColor(this->sibling()) == RED)
 				{
-					this->current()->color = BLACK;
-					this->sibling()->color = BLACK;
-					this->parent()->color = RED;
-
+					this->parent()->MakeRed();
 					ret = 2; // do again two levels back in recursion
 				}
 				else
@@ -422,7 +431,7 @@ struct RbtNode {
 					{
 						RbtNode *save = this->current()->right;
 						this->current()->rotate_left(root);
-						std::swap(this->stack_n, save);
+						std::swap(this->current(), save);
 						Caller(this, save).insert_postop2(root);
 					}
 					else
@@ -449,10 +458,7 @@ struct RbtNode {
 				}
 				else if (RbtNode::GetColor(this->uncle()) == RED)
 				{
-					this->parent()->color = BLACK;
-					this->uncle()->color = BLACK;
-					this->grandparent()->color = RED;
-
+					this->grandparent()->MakeRed();
 					ret = 2; // do again two levels back in recursion
 				}
 				else
@@ -482,37 +488,37 @@ struct RbtNode {
 			{
 				int ret = -1;
 
-				int comp_result = RbtNode::compare(node_to_insert->key, this->stack_n->key);
+				int comp_result = RbtNode::compare(node_to_insert->key, this->current()->key);
 				if (comp_result == 0)
 				{
-					this->stack_n->value = node_to_insert->value;
+					this->current()->value = node_to_insert->value;
 					/* inserted_node isn't going to be used, don't leak it */
 					delete node_to_insert;
 				}
 				else if (comp_result < 0)
 				{
-					if (this->stack_n->left == NULL)
+					if (this->current()->left == NULL)
 					{
-						this->stack_n->left = node_to_insert;
-						node_to_insert->parent = this->stack_n;	// TODO: temporary
+						this->current()->left = node_to_insert;
+						node_to_insert->parent = this->current();	// TODO: temporary, make obsolete
 						ret = insert_postop1_l(root_node);
 					}
 					else
 					{
-						ret = Caller(this, this->stack_n->left).exec(root_node, node_to_insert);
+						ret = Caller(this, this->current()->left).exec(root_node, node_to_insert);
 					}
 				}
 				else
 				{
-					if (this->stack_n->right == NULL)
+					if (this->current()->right == NULL)
 					{
-						this->stack_n->right = node_to_insert;
-						node_to_insert->parent = this->stack_n;	// TODO: temporary
+						this->current()->right = node_to_insert;
+						node_to_insert->parent = this->current();	// TODO: temporary, make obsolete
 						ret = insert_postop1_r(root_node);
 					}
 					else
 					{
-						ret = Caller(this, this->stack_n->right).exec(root_node, node_to_insert);
+						ret = Caller(this, this->current()->right).exec(root_node, node_to_insert);
 					}
 				}
 
