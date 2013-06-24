@@ -79,13 +79,14 @@ struct RbtNode {
 		return (n == NULL)?BLACK:n->color;
 	}
 
+#if 1 // TODO: make obsolete
 	RbtNode * grandparent(void) // TODO: make obsolete
 	{
 		assert (this->parent != NULL); /* Not the root node */
 		assert (this->parent->parent != NULL); /* Not child of root */
 		return this->parent->parent;
 	}
-
+#endif
 	// Recursion Helper Base Class
 	template <typename CALLER>
 	struct RH_Base
@@ -99,6 +100,54 @@ struct RbtNode {
 		: stack_c(caller),
 		  stack_n(node)
 		{ }
+
+		inline RbtNode * current(void)
+		{
+			return stack_n;
+		}
+
+		inline RbtNode * parent(void)
+		{
+			assert(stack_c != NULL);
+			return stack_c->stack_n;
+		}
+
+		inline RbtNode * grandparent(void)
+		{
+			assert(stack_c != NULL);
+			assert(stack_c->stack_c != NULL);
+			return stack_c->stack_c->stack_n;
+		}
+
+		inline RbtNode * sibling(void)
+		{
+			RbtNode * parent_node = parent();
+
+			assert(parent_node != NULL);
+
+			if (current() == parent_node->left)
+			{
+				return parent_node->right;
+			}
+			else
+			{
+				return parent_node->left;
+			}
+		}
+
+		inline RbtNode * uncle(void)
+		{
+			RbtNode * grandparent_node = grandparent();
+
+			if (parent() == grandparent_node->left)
+			{
+				return grandparent_node->right;
+			}
+			else
+			{
+				return grandparent_node->left;
+			}
+		}
 
 		inline RbtNode * current(
 				CALLER * caller)
@@ -343,6 +392,7 @@ struct RbtNode {
 		struct RH_insert : public RH_Base<RH_insert>
 		{
 			typedef RH_insert Caller;
+
 			typedef RH_Base<RH_insert> base_type;
 
 			RH_insert(
@@ -351,72 +401,51 @@ struct RbtNode {
 			: base_type(caller, node)
 			{ }
 
-			void insert_postop2( // TODO: make obsolete
-					Caller * caller,
-					RbtNode * current_node,
+			void insert_postop2(
 					RbtNode *& root)
 			{
-				current_node->parent->color = BLACK;
-				current_node->grandparent()->color = RED;
+				this->parent()->color = BLACK;
+				this->grandparent()->color = RED;
 
-				if (current_node == current_node->parent->left && current_node->parent == current_node->grandparent()->left)
+				if (this->current() == this->parent()->left && this->parent() == this->grandparent()->left)
 				{
-					current_node->grandparent()->rotate_right(root);
+					this->grandparent()->rotate_right(root);
 				}
 				else
 				{
-					current_node->grandparent()->rotate_left(root);
-				}
-			}
-
-			void insert_postop2_new( // TODO: rename to insert_postop2, when above is make obsolete
-					Caller * caller,
-					RbtNode * current_node,
-					RbtNode *& root)
-			{
-				this->current(this->stack_c)->color = BLACK;
-				this->parent(this->stack_c)->color = RED;
-
-				if (this->stack_n == this->current(this->stack_c)->left && this->current(this->stack_c) == this->parent(this->stack_c)->left)
-				{
-					this->parent(this->stack_c)->rotate_right(root);
-				}
-				else
-				{
-					this->parent(this->stack_c)->rotate_left(root);
+					this->grandparent()->rotate_left(root);
 				}
 			}
 
 			int insert_postop1_l(
-					Caller * caller,
 					RbtNode *& root)
 			{
 				int ret = -1;
 
-				if (this->current(caller)->color == BLACK)
+				if (this->current()->color == BLACK)
 				{
 					; /* Tree is still valid */
 				}
-				else if (RbtNode::GetColor(sibling(caller)) == RED)
+				else if (RbtNode::GetColor(this->sibling()) == RED)
 				{
-					this->current(caller)->color = BLACK;
-					this->sibling(caller)->color = BLACK;
-					this->parent(caller)->color = RED;
+					this->current()->color = BLACK;
+					this->sibling()->color = BLACK;
+					this->parent()->color = RED;
 
 					ret = 2; // do again two levels back in recursion
 				}
 				else
 				{
-					if (this->current(caller) == this->parent(caller)->right)
+					if (this->current() == this->parent()->right)
 					{
-						RbtNode *save = this->current(caller)->left;
-						this->current(caller)->rotate_right(root);
-						std::swap(caller->stack_n, save);
-						Caller(caller, save).insert_postop2_new(caller, save, root);
+						RbtNode *save = this->current()->left;
+						this->current()->rotate_right(root);
+						std::swap(this->stack_n, save);
+						Caller(this, save).insert_postop2(root);
 					}
 					else
 					{
-						Caller(caller, this->current(caller)->left).insert_postop2_new(caller, this->current(caller)->left, root);
+						Caller(this, this->current()->left).insert_postop2(root);
 					}
 				}
 
@@ -424,35 +453,34 @@ struct RbtNode {
 			}
 
 			int insert_postop1_r(
-					Caller * caller,
 					RbtNode *& root)
 			{
 				int ret = -1;
 
-				if (this->current(caller)->color == BLACK)
+				if (this->current()->color == BLACK)
 				{
 					; /* Tree is still valid */
 				}
-				else if (RbtNode::GetColor(sibling(caller)) == RED)
+				else if (RbtNode::GetColor(this->sibling()) == RED)
 				{
-					this->current(caller)->color = BLACK;
-					this->sibling(caller)->color = BLACK;
-					this->parent(caller)->color = RED;
+					this->current()->color = BLACK;
+					this->sibling()->color = BLACK;
+					this->parent()->color = RED;
 
 					ret = 2; // do again two levels back in recursion
 				}
 				else
 				{
-					if (this->current(caller) == this->parent(caller)->left)
+					if (this->current() == this->parent()->left)
 					{
-						RbtNode *save = this->current(caller)->right;
-						this->current(caller)->rotate_left(root);
-						std::swap(caller->stack_n, save);
-						Caller(caller, save).insert_postop2_new(caller, save, root);
+						RbtNode *save = this->current()->right;
+						this->current()->rotate_left(root);
+						std::swap(this->stack_n, save);
+						Caller(this, save).insert_postop2(root);
 					}
 					else
 					{
-						Caller(caller, this->current(caller)->right).insert_postop2_new(caller, this->current(caller)->right, root);
+						Caller(this, this->current()->right).insert_postop2(root);
 					}
 				}
 
@@ -460,44 +488,41 @@ struct RbtNode {
 			}
 
 			int insert_postop1(
-					Caller * caller,
 					RbtNode *& root)
 			{
 				int ret = -1;
 
-				if (caller->stack_c == NULL)
+				if (this->stack_c == NULL)
 				{
-					this->current(caller)->color = BLACK;
+					this->current()->color = BLACK;
 				}
-				else if (this->parent(caller)->color == BLACK)
+				else if (this->parent()->color == BLACK)
 				{
 					; /* Tree is still valid */
 				}
-				else if (RbtNode::GetColor(uncle(caller)) == RED)
+				else if (RbtNode::GetColor(this->uncle()) == RED)
 				{
-					this->parent(caller)->color = BLACK;
-					this->uncle(caller)->color = BLACK;
-					this->grandparent(caller)->color = RED;
+					this->parent()->color = BLACK;
+					this->uncle()->color = BLACK;
+					this->grandparent()->color = RED;
 
 					ret = 2; // do again two levels back in recursion
 				}
 				else
 				{
-					if (this->current(caller) == this->parent(caller)->right && this->parent(caller) == this->grandparent(caller)->left)
+					if (this->current() == this->parent()->right && this->parent() == this->grandparent()->left)
 					{
-						this->parent(caller)->rotate_left(root);
-						Caller(caller, this->current(caller)->left).insert_postop2_new(caller, this->current(caller)->left, root);
+						this->parent()->rotate_left(root);
+						Caller(this, this->current()->left).insert_postop2(root);
 					}
-					else if (this->current(caller) == this->parent(caller)->left && this->parent(caller) == this->grandparent(caller)->right)
+					else if (this->current() == this->parent()->left && this->parent() == this->grandparent()->right)
 					{
-						this->parent(caller)->rotate_right(root);
-						Caller(caller, this->current(caller)->right).insert_postop2_new(caller, this->current(caller)->right, root);
+						this->parent()->rotate_right(root);
+						Caller(this, this->current()->right).insert_postop2(root);
 					}
 					else
 					{
-						// TODO: that one requires dedicated handling
-						// before switching to insert_postop2_new(...)
-						insert_postop2(caller, this->current(caller), root);
+						insert_postop2(root);
 					}
 				}
 
@@ -523,7 +548,7 @@ struct RbtNode {
 					{
 						this->stack_n->left = node_to_insert;
 						node_to_insert->parent = this->stack_n;	// TODO: temporary
-						ret = insert_postop1_l(this, root_node);
+						ret = insert_postop1_l(root_node);
 					}
 					else
 					{
@@ -536,7 +561,7 @@ struct RbtNode {
 					{
 						this->stack_n->right = node_to_insert;
 						node_to_insert->parent = this->stack_n;	// TODO: temporary
-						ret = insert_postop1_r(this, root_node);
+						ret = insert_postop1_r(root_node);
 					}
 					else
 					{
@@ -546,7 +571,7 @@ struct RbtNode {
 
 				if (1 == ret)
 				{
-					ret = insert_postop1(this, root_node);
+					ret = insert_postop1(root_node);
 				}
 				else if (ret >= 0)
 				{
