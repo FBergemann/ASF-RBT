@@ -79,56 +79,46 @@ struct RbtNode {
 		return (n == NULL)?BLACK:n->color;
 	}
 
-	RbtNode * grandparent(void)
+	RbtNode * grandparent(void) // TODO: make obsolete
 	{
 		assert (this->parent != NULL); /* Not the root node */
 		assert (this->parent->parent != NULL); /* Not child of root */
 		return this->parent->parent;
 	}
 
-	RbtNode * sibling(void)
-	{
-		assert (this->parent != NULL); /* Root node has no sibling */
-		if (this == this->parent->left)
-		{
-			return this->parent->right;
-		}
-		else
-		{
-			return this->parent->left;
-		}
-	}
-
-	RbtNode * uncle(void)
-	{
-		assert (this->parent != NULL); /* Root node has no uncle */
-		assert (this->parent->parent != NULL); /* Children of root have no uncle */
-		return this->parent->sibling();
-	}
-
 	// Recursion Helper Base Class
 	template <typename CALLER>
 	struct RH_Base
 	{
-		RbtNode *stack_n;
 		CALLER *stack_c;
+		RbtNode *stack_n;
 
-		// TODO: add asserts here (see above)
+		RH_Base(
+				CALLER * caller,
+				RbtNode * node)
+		: stack_c(caller),
+		  stack_n(node)
+		{ }
+
 		inline RbtNode * current(
 				CALLER * caller)
 		{
+			assert(caller != NULL);
 			return caller->stack_n;
 		}
 
 		inline RbtNode * parent(
 				CALLER * caller)
 		{
+			assert(caller != NULL);
 			return caller->stack_c->stack_n;
 		}
 
 		inline RbtNode * grandparent(
 				CALLER * caller)
 		{
+			assert(caller != NULL);
+			assert(caller->stack_c != NULL);
 			return caller->stack_c->stack_c->stack_n;
 		}
 
@@ -136,6 +126,9 @@ struct RbtNode {
 				CALLER * caller)
 		{
 			RbtNode * parent_node = parent(caller);
+
+			assert(parent_node != NULL);
+
 			if (current(caller) == parent_node->left)
 			{
 				return parent_node->right;
@@ -149,6 +142,7 @@ struct RbtNode {
 		inline RbtNode * uncle(
 				CALLER * caller)
 		{
+			assert(caller != NULL);
 			return sibling(caller->stack_c);
 		}
 	};
@@ -243,28 +237,34 @@ struct RbtNode {
 	{
 		typedef RH_verify_property_4 Caller;
 
-		void exec(Caller * caller, RbtNode * n)
+		typedef RH_Base<RH_verify_property_4> base_type;
+
+		RH_verify_property_4(
+				Caller * caller,
+				RbtNode * node)
+		: base_type(caller, node)
+		{ }
+
+		void exec(void)
 		{
-			if (n == NULL)
+			if (this->stack_n == NULL)
 			{
 				return;
 			}
 
 			// std::cout << "### verify node with key " << n->key << std::endl;
 
-			this->stack_n = n;
-
-			if (RbtNode::GetColor(n) == RED)
+			if (RbtNode::GetColor(this->stack_n) == RED)
 			{
-				assert (RbtNode::GetColor(n->left)   == BLACK);
-				assert (RbtNode::GetColor(n->right)  == BLACK);
-				if (caller != NULL)
+				assert (RbtNode::GetColor(this->stack_n->left)   == BLACK);
+				assert (RbtNode::GetColor(this->stack_n->right)  == BLACK);
+				if (this->stack_c != NULL)
 				{
-					assert (RbtNode::GetColor(caller->stack_n) == BLACK);
+					assert (RbtNode::GetColor(this->stack_c->stack_n) == BLACK);
 				}
 			}
-			Caller().exec(this, n->left);
-			Caller().exec(this, n->right);
+			Caller(this, this->stack_n->left).exec();
+			Caller(this, this->stack_n->right).exec();
 		}
 	};
 
@@ -272,7 +272,7 @@ struct RbtNode {
 			RbtNode * n)
 	{
 
-		RH_verify_property_4().exec(NULL, n);
+		RH_verify_property_4(NULL, n).exec();
 	}
 
 	static void verify_property_5_helper(
@@ -340,11 +340,18 @@ struct RbtNode {
 
 
 		// Recursion Helper for insert operation
-		struct RH_insert_recursive : public RH_Base<RH_insert_recursive>
+		struct RH_insert : public RH_Base<RH_insert>
 		{
-			typedef RH_insert_recursive Caller;
+			typedef RH_insert Caller;
+			typedef RH_Base<RH_insert> base_type;
 
-			void insert_postop2(
+			RH_insert(
+					Caller * caller,
+					RbtNode * node)
+			: base_type(caller, node)
+			{ }
+
+			void insert_postop2( // TODO: make obsolete
 					Caller * caller,
 					RbtNode * current_node,
 					RbtNode *& root)
@@ -359,6 +366,24 @@ struct RbtNode {
 				else
 				{
 					current_node->grandparent()->rotate_left(root);
+				}
+			}
+
+			void insert_postop2_new( // TODO: rename to insert_postop2, when above is make obsolete
+					Caller * caller,
+					RbtNode * current_node,
+					RbtNode *& root)
+			{
+				this->current(this->stack_c)->color = BLACK;
+				this->parent(this->stack_c)->color = RED;
+
+				if (this->stack_n == this->current(this->stack_c)->left && this->current(this->stack_c) == this->parent(this->stack_c)->left)
+				{
+					this->parent(this->stack_c)->rotate_right(root);
+				}
+				else
+				{
+					this->parent(this->stack_c)->rotate_left(root);
 				}
 			}
 
@@ -384,12 +409,14 @@ struct RbtNode {
 				{
 					if (this->current(caller) == this->parent(caller)->right)
 					{
+						RbtNode *save = this->current(caller)->left;
 						this->current(caller)->rotate_right(root);
-						insert_postop2(caller, this->current(caller), root);
+						std::swap(caller->stack_n, save);
+						Caller(caller, save).insert_postop2_new(caller, save, root);
 					}
 					else
 					{
-						insert_postop2(caller, this->current(caller)->left, root);
+						Caller(caller, this->current(caller)->left).insert_postop2_new(caller, this->current(caller)->left, root);
 					}
 				}
 
@@ -418,12 +445,14 @@ struct RbtNode {
 				{
 					if (this->current(caller) == this->parent(caller)->left)
 					{
+						RbtNode *save = this->current(caller)->right;
 						this->current(caller)->rotate_left(root);
-						insert_postop2(caller, this->current(caller), root);
+						std::swap(caller->stack_n, save);
+						Caller(caller, save).insert_postop2_new(caller, save, root);
 					}
 					else
 					{
-						insert_postop2(caller, this->current(caller)->right, root);
+						Caller(caller, this->current(caller)->right).insert_postop2_new(caller, this->current(caller)->right, root);
 					}
 				}
 
@@ -457,15 +486,17 @@ struct RbtNode {
 					if (this->current(caller) == this->parent(caller)->right && this->parent(caller) == this->grandparent(caller)->left)
 					{
 						this->parent(caller)->rotate_left(root);
-						insert_postop2(caller, this->current(caller)->left, root);
+						Caller(caller, this->current(caller)->left).insert_postop2_new(caller, this->current(caller)->left, root);
 					}
 					else if (this->current(caller) == this->parent(caller)->left && this->parent(caller) == this->grandparent(caller)->right)
 					{
 						this->parent(caller)->rotate_right(root);
-						insert_postop2(caller, this->current(caller)->right, root);
+						Caller(caller, this->current(caller)->right).insert_postop2_new(caller, this->current(caller)->right, root);
 					}
 					else
 					{
+						// TODO: that one requires dedicated handling
+						// before switching to insert_postop2_new(...)
 						insert_postop2(caller, this->current(caller), root);
 					}
 				}
@@ -474,26 +505,21 @@ struct RbtNode {
 			}
 
 			int exec(
-				Caller * caller,
 				RbtNode *& root_node,
-				RbtNode * current_node,
 				RbtNode * node_to_insert)
 			{
 				int ret = -1;
 
-				this->stack_n = current_node;
-				this->stack_c = caller;
-
-				int comp_result = RbtNode::compare(node_to_insert->key, current_node->key);
+				int comp_result = RbtNode::compare(node_to_insert->key, this->stack_n->key);
 				if (comp_result == 0)
 				{
-					current_node->value = node_to_insert->value;
+					this->stack_n->value = node_to_insert->value;
 					/* inserted_node isn't going to be used, don't leak it */
 					delete node_to_insert;
 				}
 				else if (comp_result < 0)
 				{
-					if (current_node->left == NULL)
+					if (this->stack_n->left == NULL)
 					{
 						this->stack_n->left = node_to_insert;
 						node_to_insert->parent = this->stack_n;	// TODO: temporary
@@ -501,12 +527,12 @@ struct RbtNode {
 					}
 					else
 					{
-						ret = Caller().exec(this, root_node, this->stack_n->left, node_to_insert);
+						ret = Caller(this, this->stack_n->left).exec(root_node, node_to_insert);
 					}
 				}
 				else
 				{
-					if (current_node->right == NULL)
+					if (this->stack_n->right == NULL)
 					{
 						this->stack_n->right = node_to_insert;
 						node_to_insert->parent = this->stack_n;	// TODO: temporary
@@ -514,7 +540,7 @@ struct RbtNode {
 					}
 					else
 					{
-						ret = Caller().exec(this, root_node, this->stack_n->right, node_to_insert);
+						ret = Caller(this, this->stack_n->right).exec(root_node, node_to_insert);
 					}
 				}
 
@@ -545,7 +571,7 @@ struct RbtNode {
 			}
 			else
 			{
-				RH_insert_recursive().exec(NULL, this->root, this->root, node_to_insert);
+				RH_insert(NULL, this->root).exec(this->root, node_to_insert);
 			}
 
 			verify_properties();
