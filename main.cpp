@@ -79,14 +79,6 @@ struct RbtNode {
 		return (n == NULL)?BLACK:n->color;
 	}
 
-#if 1 // TODO: make obsolete
-	RbtNode * grandparent(void) // TODO: make obsolete
-	{
-		assert (this->parent != NULL); /* Not the root node */
-		assert (this->parent->parent != NULL); /* Not child of root */
-		return this->parent->parent;
-	}
-#endif
 	// Recursion Helper Base Class
 	template <typename CALLER>
 	struct RH_Base
@@ -149,51 +141,6 @@ struct RbtNode {
 			}
 		}
 
-		inline RbtNode * current(
-				CALLER * caller)
-		{
-			assert(caller != NULL);
-			return caller->stack_n;
-		}
-
-		inline RbtNode * parent(
-				CALLER * caller)
-		{
-			assert(caller != NULL);
-			return caller->stack_c->stack_n;
-		}
-
-		inline RbtNode * grandparent(
-				CALLER * caller)
-		{
-			assert(caller != NULL);
-			assert(caller->stack_c != NULL);
-			return caller->stack_c->stack_c->stack_n;
-		}
-
-		inline RbtNode * sibling(
-				CALLER * caller)
-		{
-			RbtNode * parent_node = parent(caller);
-
-			assert(parent_node != NULL);
-
-			if (current(caller) == parent_node->left)
-			{
-				return parent_node->right;
-			}
-			else
-			{
-				return parent_node->left;
-			}
-		}
-
-		inline RbtNode * uncle(
-				CALLER * caller)
-		{
-			assert(caller != NULL);
-			return sibling(caller->stack_c);
-		}
 	};
 
 	void replace_node(
