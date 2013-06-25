@@ -156,60 +156,64 @@ struct RbtNode {
 			}
 		}
 
-	};
-
-	void replace_node(
-			RbtNode *& root,
-			RbtNode * newn)
-	{
-		if (this->parent == NULL)
+		void replace_node(
+				RbtNode * node,
+				RbtNode * newn,
+				RbtNode *& root)
 		{
-			root = newn;
-		}
-		else
-		{
-			if (this == this->parent->left)
+			if (node->parent == NULL)
 			{
-				this->parent->left = newn;
+				root = newn;
 			}
 			else
 			{
-				this->parent->right = newn;
+				if (node == node->parent->left)
+				{
+					node->parent->left = newn;
+				}
+				else
+				{
+					node->parent->right = newn;
+				}
+			}
+			if (newn != NULL)
+			{
+				newn->parent = node->parent;
 			}
 		}
-		if (newn != NULL)
-		{
-			newn->parent = this->parent;
-		}
-	}
 
-	void rotate_left(
-			RbtNode *& root)
-	{
-		RbtNode * R = this->right;
-		this->replace_node(root, R);
-		this->right = R->left;
-		if (R->left != NULL)
+		void rotate_left(
+				RbtNode * node,
+				RbtNode *& root)
 		{
-			R->left->parent = this;
+			RbtNode * R = node->right;
+			replace_node(node, R, root);
+			node->right = R->left;
+			if (R->left != NULL)
+			{
+				R->left->parent = node;
+			}
+			R->left = node;
+			node->parent = R;
 		}
-		R->left = this;
-		this->parent = R;
-	}
 
-	void rotate_right(
-			RbtNode *& root)
-	{
-		RbtNode * L = this->left;
-		this->replace_node(root, L);
-		this->left = L->right;
-		if (L->right != NULL)
+		void rotate_right(
+				RbtNode * node,
+				RbtNode *& root)
 		{
-			L->right->parent = this;
+			RbtNode * L = node->left;
+			replace_node(node, L, root);
+			node->left = L->right;
+			if (L->right != NULL)
+			{
+				L->right->parent = node;
+			}
+			L->right = node;
+			node->parent = L;
 		}
-		L->right = this;
-		this->parent = L;
-	}
+	};
+
+
 
 	static int compare(
 			KEY const & left,
@@ -371,11 +375,11 @@ struct RbtNode {
 
 				if (this->current() == this->parent()->left && this->parent() == this->grandparent()->left)
 				{
-					this->grandparent()->rotate_right(root);
+					this->rotate_right(this->grandparent(), root);
 				}
 				else
 				{
-					this->grandparent()->rotate_left(root);
+					this->rotate_left(this->grandparent(), root);
 				}
 			}
 
@@ -398,7 +402,7 @@ struct RbtNode {
 					if (this->current() == this->parent()->right)
 					{
 						RbtNode *save = this->current()->left;
-						this->current()->rotate_right(root);
+						this->rotate_right(this->current(), root);
 						std::swap(this->current(), save);
 						Caller(this, save).insert_postop2(root);
 					}
@@ -430,7 +434,7 @@ struct RbtNode {
 					if (this->current() == this->parent()->left)
 					{
 						RbtNode *save = this->current()->right;
-						this->current()->rotate_left(root);
+						this->rotate_left(this->current(), root);
 						std::swap(this->current(), save);
 						Caller(this, save).insert_postop2(root);
 					}
@@ -465,12 +469,12 @@ struct RbtNode {
 				{
 					if (this->current() == this->parent()->right && this->parent() == this->grandparent()->left)
 					{
-						this->parent()->rotate_left(root);
+						this->rotate_left(this->parent(), root);
 						Caller(this, this->current()->left).insert_postop2(root);
 					}
 					else if (this->current() == this->parent()->left && this->parent() == this->grandparent()->right)
 					{
-						this->parent()->rotate_right(root);
+						this->rotate_right(this->parent(), root);
 						Caller(this, this->current()->right).insert_postop2(root);
 					}
 					else
