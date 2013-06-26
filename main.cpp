@@ -568,15 +568,46 @@ int main(
 	int,
 	char**)
 {
-	RbtNode<int, int>::Tree tree;
-
-	for(int i=0; i<20; i++)
 	{
-		int x = rand() % 10000;
-		int y = rand() % 10000;
-		printf("Inserting %d -> %d\n\n", x, y);
-		tree.insert(x, y);
-		// assert(tree->lookup(x) == y);
+		RbtNode<int, int>::Tree tree;
+
+		for(int i=0; i<20; i++)
+		{
+			int x = rand() % 10000;
+			int y = rand() % 10000;
+			// printf("Inserting %d -> %d\n\n", x, y);
+			tree.insert(x, y);
+			// assert(tree->lookup(x) == y);
+			// tree.print();
+		}
+		tree.print();
+	}
+	{
+		RbtNode<int, int>::Tree tree;
+
+		for(int i=0; i<20; i++)
+		{
+			int x = i;
+			int y = i;
+			// printf("Inserting %d -> %d\n\n", x, y);
+			tree.insert(x, y);
+			// assert(tree->lookup(x) == y);
+			// tree.print();
+		}
+		tree.print();
+	}
+	{
+		RbtNode<int, int>::Tree tree;
+
+		for(int i=0; i<20; i++)
+		{
+			int x = 19-i;
+			int y = 19-i;
+			// printf("Inserting %d -> %d\n\n", x, y);
+			tree.insert(x, y);
+			// assert(tree->lookup(x) == y);
+			// tree.print();
+		}
 		tree.print();
 	}
 
