@@ -175,20 +175,13 @@ struct RbtNode {
 			{
 				root = newn;
 			}
+			else if (caller->stack_n == caller->stack_c->stack_n->left)
+			{
+				caller->stack_c->stack_n->left = newn;
+			}
 			else
 			{
-				if (caller->stack_n == caller->stack_c->stack_n->left)
-				{
-					caller->stack_c->stack_n->left = newn;
-				}
-				else
-				{
-					caller->stack_c->stack_n->right = newn;
-				}
-			}
-			if (newn != NULL)
-			{
-				; // newn->parent = caller->stack_n->parent;
+				caller->stack_c->stack_n->right = newn;
 			}
 		}
 
