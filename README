@@ -10,7 +10,10 @@
 # Trying now to model something for Red-Black Trees here.
 # Started by taking a red-black tree implementation from here: 
 # http://en.literateprograms.org/Red-black_tree_%28C%29
+# (rbtree.h, rbtree.c, rbtree_test.c - the latter slightly modified)
+
 # Transmogrified that into C++.
 # Now trying to make obsolete the need for a *parent ptr
 # by what was discussed in comp.lang.c++.moderated.
+# (asf_rbtree.h asf_rbtree_test.cc)
 #
