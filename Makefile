@@ -1,4 +1,3 @@
-
 INSTALL_FILES=\
 	asf_rbt_test \
 	rbt_test
@@ -14,7 +13,7 @@ test : $(INSTALL_FILES)
 	diff out1 out2
 	
 asf_rbt_test : main.cpp
-	$(CXX) -o $@ $<
+	$(CXX) -o $@ $+
 	
-rbt_test : rbtree.c testmain.c
+rbt_test : rbtree.c rbtree_test.c
 	$(CC) -o $@ $+
