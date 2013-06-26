@@ -12,7 +12,7 @@ test : $(INSTALL_FILES)
 	./rbt_test > out2
 	diff out1 out2
 	
-asf_rbt_test : main.cpp
+asf_rbt_test : asf_rbtree_test.cc
 	$(CXX) -o $@ $+
 	
 rbt_test : rbtree.c rbtree_test.c
