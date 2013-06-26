@@ -29,8 +29,6 @@ struct RbtNode {
 
 	RbtNode* right;
 
-	RbtNode* parent;    // TODO: make obsolete
-
 	RbtNode(
 			KEY const & key,
 			VALUE const & value)
@@ -38,8 +36,7 @@ struct RbtNode {
 	  value(value),
 	  color(RED),
 	  left(NULL),
-	  right(NULL),
-	  parent(NULL)
+	  right(NULL)
 	{  }
 
 	void print(
@@ -170,28 +167,28 @@ struct RbtNode {
 		}
 
 		void replace_node(
-				RbtNode * node,
+				RH_Base * caller,
 				RbtNode * newn,
 				RbtNode *& root)
 		{
-			if (node->parent == NULL)
+			if (caller->stack_c == NULL)
 			{
 				root = newn;
 			}
 			else
 			{
-				if (node == node->parent->left)
+				if (caller->stack_n == caller->stack_c->stack_n->left)
 				{
-					node->parent->left = newn;
+					caller->stack_c->stack_n->left = newn;
 				}
 				else
 				{
-					node->parent->right = newn;
+					caller->stack_c->stack_n->right = newn;
 				}
 			}
 			if (newn != NULL)
 			{
-				newn->parent = node->parent;
+				; // newn->parent = caller->stack_n->parent;
 			}
 		}
 
@@ -200,14 +197,9 @@ struct RbtNode {
 				RbtNode *& root)
 		{
 			RbtNode * R = caller->stack_n->right;
-			replace_node(caller->stack_n, R, root);
+			replace_node(caller, R, root);
 			caller->stack_n->right = R->left;
-			if (R->left != NULL)
-			{
-				R->left->parent = caller->stack_n;
-			}
 			R->left = caller->stack_n;
-			caller->stack_n->parent = R;
 		}
 
 		void rotate_right(
@@ -215,14 +207,9 @@ struct RbtNode {
 				RbtNode *& root)
 		{
 			RbtNode * L = caller->stack_n->left;
-			replace_node(caller->stack_n, L, root);
+			replace_node(caller, L, root);
 			caller->stack_n->left = L->right;
-			if (L->right != NULL)
-			{
-				L->right->parent = caller->stack_n;
-			}
 			L->right = caller->stack_n;
-			caller->stack_n->parent = L;
 		}
 	};
 
@@ -517,7 +504,6 @@ struct RbtNode {
 					if (this->current()->left == NULL)
 					{
 						this->current()->left = node_to_insert;
-						node_to_insert->parent = this->current();	// TODO: temporary, make obsolete
 						ret = insert_postop1_l(root_node);
 					}
 					else
@@ -530,7 +516,6 @@ struct RbtNode {
 					if (this->current()->right == NULL)
 					{
 						this->current()->right = node_to_insert;
-						node_to_insert->parent = this->current();	// TODO: temporary, make obsolete
 						ret = insert_postop1_r(root_node);
 					}
 					else
