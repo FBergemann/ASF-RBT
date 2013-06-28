@@ -551,6 +551,26 @@ struct RbtNode {
 
 		}
 
+		RbtNode * lookup(
+				KEY const & key)
+		{
+			RbtNode * n = this->root;
+			while (n != NULL)
+			{
+				int comp_result = RbtNode::compare(key, n->key);
+				if (0 == comp_result)
+				{
+					return n;
+				} else if (comp_result < 0)
+				{
+					n = n->left;
+				} else
+				{
+					n = n->right;
+				}
+			}
+			return n;
+		}
 	};
 
 };
