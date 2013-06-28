@@ -9,8 +9,9 @@ int main(
   int,
 	char**)
 {
+	typedef RbtNode<int, int> Node;
 	{
-		RbtNode<int, int>::Tree tree;
+		Node::Tree tree;
 
 		for(int i=0; i<20; i++)
 		{
@@ -18,13 +19,15 @@ int main(
 			int y = rand() % 10000;
 			// printf("Inserting %d -> %d\n\n", x, y);
 			tree.insert(x, y);
-			// assert(tree->lookup(x) == y);
+			Node * node = tree.lookup(x);
+			assert(node != NULL);
+			assert(node->value == y);
 			// tree.print();
 		}
 		tree.print();
 	}
 	{
-		RbtNode<int, int>::Tree tree;
+		Node::Tree tree;
 
 		for(int i=0; i<20; i++)
 		{
@@ -32,13 +35,15 @@ int main(
 			int y = i;
 			// printf("Inserting %d -> %d\n\n", x, y);
 			tree.insert(x, y);
-			// assert(tree->lookup(x) == y);
+			Node * node = tree.lookup(x);
+			assert(node != NULL);
+			assert(node->value == y);
 			// tree.print();
 		}
 		tree.print();
 	}
 	{
-		RbtNode<int, int>::Tree tree;
+		Node::Tree tree;
 
 		for(int i=0; i<20; i++)
 		{
@@ -46,7 +51,9 @@ int main(
 			int y = 19-i;
 			// printf("Inserting %d -> %d\n\n", x, y);
 			tree.insert(x, y);
-			// assert(tree->lookup(x) == y);
+			Node * node = tree.lookup(x);
+			assert(node != NULL);
+			assert(node->value == y);
 			// tree.print();
 		}
 		tree.print();
