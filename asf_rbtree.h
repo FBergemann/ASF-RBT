@@ -1,5 +1,5 @@
 /*
- * main.cpp
+ *  asf_rbtree.h
  *
  *  Created on: Jun 13, 2013
  *      Author: frank
@@ -551,7 +551,9 @@ struct RbtNode {
 
 		}
 
-		RbtNode * lookup(
+		// iterative version of lookup
+		// TODO: temporary disabled to test for a ASF recursive version
+		RbtNode * lookup_it(
 				KEY const & key)
 		{
 			RbtNode * n = this->root;
@@ -571,6 +573,72 @@ struct RbtNode {
 			}
 			return n;
 		}
+
+        // Recursion Helper for ASF lookup operation
+		// TODO: will be turned into delete() operation
+        struct RH_lookup : public RH_Base<RH_lookup>
+        {
+            typedef RH_lookup Caller;
+
+            typedef RH_Base<RH_lookup> base_type;
+
+            RH_lookup(
+                    Caller * caller,
+                    RbtNode * node)
+            : base_type(caller, node)
+            { }
+
+            RbtNode * exec(
+                    KEY const & key)
+            {
+                if (NULL == this->current())
+                {
+                    return NULL;
+                }
+
+                int comp_result = RbtNode::compare(key, this->current()->key);
+
+                if (0 == comp_result)
+                {
+                    return this->current();
+                }
+
+                if (comp_result < 0)
+                {
+                    return RH_lookup(this, this->current()->left).exec(key);
+                }
+
+                return RH_lookup(this, this->current()->right).exec(key);
+            }
+        };
+
+        // model lookup via ASF
+        // TODO: will be turned into delete() operation
+		RbtNode * lookup(
+		        KEY const & key)
+		{
+		    RbtNode * n = this->root;
+
+		    if (NULL == n)
+		    {
+		        return NULL;
+		    }
+
+            int comp_result = RbtNode::compare(key, n->key);
+
+            if (0 == comp_result)
+            {
+                return n;
+            }
+
+            if (comp_result < 0)
+            {
+                return RH_lookup(NULL, n->left).exec(key);
+            }
+
+            return RH_lookup(NULL, n->right).exec(key);
+ 		}
+
 	};
 
 };
