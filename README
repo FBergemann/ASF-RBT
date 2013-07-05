@@ -7,13 +7,12 @@
 # "Access Data Items In Ancestor Stack Frames Safely (Dr.Dobb's article)"
 # (http://groups.google.com/group/comp.lang.c++.moderated/browse_frm/thread/a678d70370061318?hl=de#)
 #
-# Trying now to model something for Red-Black Trees here.
+# Modeling Red-Black Trees this way now.
 # Started by taking a red-black tree implementation from here: 
 # http://en.literateprograms.org/Red-black_tree_%28C%29
 # (rbtree.h, rbtree.c, rbtree_test.c - the latter slightly modified)
-
-# Transmogrified that into C++.
-# Now trying to make obsolete the need for a *parent ptr
-# by what was discussed in comp.lang.c++.moderated.
+# First transmogrified that into C++.
+# Then making obsolete the need for a *parent ptr 
+# - left to do is remodeling of the delete(...) operation.
 # (asf_rbtree.h asf_rbtree_test.cc)
 #
