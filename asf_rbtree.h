@@ -575,7 +575,7 @@ struct RbtNode {
 		}
 
         // Recursion Helper for ASF lookup operation
-		// TODO: will be turned into delete() operation
+        // TODO: will be turned into delete() operation
         struct RH_lookup : public RH_Base<RH_lookup>
         {
             typedef RH_lookup Caller;
@@ -614,15 +614,15 @@ struct RbtNode {
 
         // model lookup via ASF
         // TODO: will be turned into delete() operation
-		RbtNode * lookup(
-		        KEY const & key)
-		{
-		    RbtNode * n = this->root;
+        RbtNode * lookup(
+                KEY const & key)
+        {
+            RbtNode * n = this->root;
 
-		    if (NULL == n)
-		    {
-		        return NULL;
-		    }
+            if (NULL == n)
+            {
+                return NULL;
+            }
 
             int comp_result = RbtNode::compare(key, n->key);
 
@@ -637,8 +637,8 @@ struct RbtNode {
             }
 
             return RH_lookup(NULL, n->right).exec(key);
- 		}
+        }
 
-	};
+    };
 
 };
