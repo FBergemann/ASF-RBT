@@ -1,4 +1,6 @@
+#include <assert.h>
 #include <cstdlib> // rand()
+#include <iostream>
 
 #define VERIFY_RBTREE
 #define TRACE
@@ -6,11 +8,14 @@
 #include "asf_rbtree.h"
 
 int main(
-  int,
-	char**)
+		int,
+		char**)
 {
 	typedef RbtNode<int, int> Node;
+
 	{
+		std::cout << "=== TREE 1 - BEGIN ===" << std::endl;
+
 		Node::Tree tree;
 
 		for(int i=0; i<20; i++)
@@ -25,8 +30,13 @@ int main(
 			// tree.print();
 		}
 		tree.print();
+
+		std::cout << "=== TREE 1 - END ===" << std::endl << std::endl;
 	}
+
 	{
+		std::cout << "=== TREE 2 - BEGIN ===" << std::endl;
+
 		Node::Tree tree;
 
 		for(int i=0; i<20; i++)
@@ -41,8 +51,13 @@ int main(
 			// tree.print();
 		}
 		tree.print();
+
+		std::cout << "=== TREE 2 - END ===" << std::endl << std::endl;
 	}
+
 	{
+		std::cout << "=== TREE 3 - BEGIN ===" << std::endl;
+
 		Node::Tree tree;
 
 		for(int i=0; i<20; i++)
@@ -57,6 +72,8 @@ int main(
 			// tree.print();
 		}
 		tree.print();
+
+		std::cout << "=== TREE 3 - END ===" << std::endl << std::endl;
 	}
 
 #if 0

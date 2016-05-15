@@ -24,121 +24,177 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Retrieved from: http://en.literateprograms.org/Red-black_tree_(C)?oldid=18555
 */
 
+/*
+ * ATTENTION:
+ *
+ *  This module is just a demo
+ *  It stores long values directly at void *
+ *  instead of allocating and releasing memory for long values
+ *
+ */
+
 #include "rbtree.h"
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h> /* rand() */
 
-static int compare_int(void* left, void* right);
-static void print_tree(rbtree t);
-static void print_tree_helper(rbtree_node n, int indent);
+#define INDENT_STEP	(2)
+#undef TRACE
 
-int compare_int(void* leftp, void* rightp) {
-    int left = (int)leftp;
-    int right = (int)rightp;
-    if (left < right) 
-        return -1;
-    else if (left > right)
-        return 1;
-    else {
-        assert (left == right);
-        return 0;
-    }
+static int compare_long(
+		void * leftp,
+		void * rightp)
+{
+	long left  = (long)leftp;
+	long right = (long)rightp;
+
+	if (left < right)
+	{
+		return -1; /* early exit */
+	}
+	else if (left > right)
+	{
+    	return 1; /* early exit */
+	}
+
+	assert (left == right);
+	return 0;
 }
 
-#define INDENT_STEP  2
+static void print_tree_helper(
+		rbtree_node n,
+		int indent)
+{
+	int i;
 
-void print_tree_helper(rbtree_node n, int indent);
+	if (NULL == n)
+	{
+    	fputs("<empty tree>", stdout);
+        return; /* early exit */
+	}
 
-void print_tree(rbtree t) {
-    print_tree_helper(t->root, 0);
+	if (n->right != NULL)
+	{
+		print_tree_helper(n->right, indent + INDENT_STEP);
+	}
+
+	for(i=0; i<indent; i++)
+	{
+    	fputs(" ", stdout);
+	}
+
+	if (n->color == RED)
+	{
+    	printf("%ld\n", (long)n->key);
+	}
+	else
+	{
+    	printf("<%ld>\n", (long)n->key);
+	}
+
+	if (n->left != NULL)
+	{
+    	print_tree_helper(n->left, indent + INDENT_STEP);
+	}
 }
 
-void print_tree_helper(rbtree_node n, int indent) {
-    int i;
-    if (n == NULL) {
-        fputs("<empty tree>", stdout);
-        return;
-    }
-    if (n->right != NULL) {
-        print_tree_helper(n->right, indent + INDENT_STEP);
-    }
-    for(i=0; i<indent; i++)
-        fputs(" ", stdout);
-    if (n->color == RED)
-        printf("%d\n", (int)n->key);
-    else
-        printf("<%d>\n", (int)n->key);
-    if (n->left != NULL) {
-        print_tree_helper(n->left, indent + INDENT_STEP);
-    }
+static void print_tree(
+		rbtree t)
+{
+	print_tree_helper(t->root, 0);
 }
 
-int main() {
-    int i;
-    rbtree t = NULL;
+int main()
+{
+	int i;
+	rbtree t = NULL;
 
-    t = rbtree_create();
+	{
+		puts("=== TREE 1 - BEGIN ===");
+		t = rbtree_create();
 
-    for(i=0; i<20; i++) {
-  int x = rand() % 10000;
-	int y = rand() % 10000;
+		for (i=0; i<20; i++)
+		{
+			long x = rand() % 10000;
+			long y = rand() % 10000;
 #ifdef TRACE
-        print_tree(t);
-        printf("Inserting %d -> %d\n\n", x, y);
+			print_tree(t);
+			printf("Inserting %d -> %d\n\n", x, y);
 #endif
-        rbtree_insert(t, (void*)x, (void*)y, compare_int);
-        assert(rbtree_lookup(t, (void*)x, compare_int) == (void*)y);
-    }
+			rbtree_insert(t, (void*)x, (void*)y, compare_long);
+			assert(rbtree_lookup(t, (void*)x, compare_long) == (void*)y);
+		}
 
-    print_tree(t);
-    puts("");
+		print_tree(t);
+		puts("");
 
-    // TODO: memory leak!
-    free(t);
-    t = rbtree_create();
+		free(t);
 
-    for(i=0; i<20; i++) {
-        int x = i;
-        int y = i;
+		puts("=== TREE 1 - END ===\n");
+	}
+
+	{
+		puts("=== TREE 2 - BEGIN ===");
+
+		t = rbtree_create();
+
+		for(i=0; i<20; i++)
+		{
+			long x = i;
+			long y = i;
 #ifdef TRACE
-        print_tree(t);
-        printf("Inserting %d -> %d\n\n", x, y);
+			print_tree(t);
+			printf("Inserting %d -> %d\n\n", x, y);
 #endif
-        rbtree_insert(t, (void*)x, (void*)y, compare_int);
-        assert(rbtree_lookup(t, (void*)x, compare_int) == (void*)y);
-    }
+			rbtree_insert(t, (void*)x, (void*)y, compare_long);
+			assert(rbtree_lookup(t, (void*)x, compare_long) == (void*)y);
+		}
 
-    print_tree(t);
-    puts("");
+		print_tree(t);
+		puts("");
 
-    // TODO: memory leak!
-    free(t);
-    t = rbtree_create();
+		free(t);
 
-    for(i=0; i<20; i++) {
-        int x = 19 - i;
-        int y = 19 - i;
+		puts("=== TREE 2 - END ===\n");
+	}
+
+	{
+		puts("=== TREE 3 - BEGIN ===");
+
+		t = rbtree_create();
+
+		for(i=0; i<20; i++)
+		{
+			long x = 19 - i;
+			long y = 19 - i;
 #ifdef TRACE
-        print_tree(t);
-        printf("Inserting %d -> %d\n\n", x, y);
+			print_tree(t);
+			printf("Inserting %d -> %d\n\n", x, y);
 #endif
-        rbtree_insert(t, (void*)x, (void*)y, compare_int);
-        assert(rbtree_lookup(t, (void*)x, compare_int) == (void*)y);
-    }
+			rbtree_insert(t, (void*)x, (void*)y, compare_long);
+			assert(rbtree_lookup(t, (void*)x, compare_long) == (void*)y);
+		}
 
-    print_tree(t);
-    puts("");
+		print_tree(t);
+		puts("");
 
 #if 0
-    for(i=0; i<60000; i++) {
-        int x = rand() % 10000;
+		for(i=0; i<60000; i++)
+		{
+			int x = rand() % 10000;
 #ifdef TRACE
-        print_tree(t);
-        printf("Deleting key %d\n\n", x);
+			print_tree(t);
+			printf("Deleting key %d\n\n", x);
 #endif
-        rbtree_delete(t, (void*)x, compare_int);
-    }
+			rbtree_delete(t, (void*)x, compare_long);
+		}
 #endif
+
+		free(t);
+
+		puts("=== TREE 3 - END ===\n");
+
+	}
+
     return 0;
 }
