@@ -166,6 +166,20 @@ struct RbtNode {
 			return stack_c->stack_c;
 		}
 
+		/**
+		 * get the maximum value of current position down the tree.
+		 * it's the leaf at most right position
+		 */
+		inline RbtNode * maximum_node(void)
+		{
+			RbtNode *n = stack_n;
+			while (NULL != n->right)
+			{
+				n = n->right;
+			}
+			return n;
+		}
+
 		void replace_node(
 				RH_Base * caller,
 				RbtNode * newn,
@@ -205,8 +219,6 @@ struct RbtNode {
 			L->right = caller->stack_n;
 		}
 	};
-
-
 
 	static int compare(
 			KEY const & left,
@@ -551,8 +563,35 @@ struct RbtNode {
 
 		}
 
+		// Recursion Helper for insert operation
+		struct RH_del : public RH_Base<RH_del>
+		{
+			typedef RH_del Caller;
+
+			typedef RH_Base<RH_del> base_type;
+
+			RH_del(
+					Caller * caller,
+					RbtNode * node)
+			: base_type(caller, node)
+			{ }
+
+
+			void exec(
+					KEY const & key)
+			{
+				// TODO
+			}
+		};
+
+
+		void del(
+				KEY const & key)
+		{
+			// TODO
+		}
+
 		// iterative version of lookup
-		// TODO: temporary disabled to test for a ASF recursive version
 		RbtNode * lookup_it(
 				KEY const & key)
 		{
@@ -563,10 +602,12 @@ struct RbtNode {
 				if (0 == comp_result)
 				{
 					return n;
-				} else if (comp_result < 0)
+				}
+				else if (comp_result < 0)
 				{
 					n = n->left;
-				} else
+				}
+				else
 				{
 					n = n->right;
 				}
@@ -574,71 +615,70 @@ struct RbtNode {
 			return n;
 		}
 
-        // Recursion Helper for ASF lookup operation
-        // TODO: will be turned into delete() operation
-        struct RH_lookup : public RH_Base<RH_lookup>
-        {
-            typedef RH_lookup Caller;
 
-            typedef RH_Base<RH_lookup> base_type;
+		// Recursion Helper for ASF lookup operation
+		struct RH_lookup : public RH_Base<RH_lookup>
+		{
+			typedef RH_lookup Caller;
 
-            RH_lookup(
-                    Caller * caller,
-                    RbtNode * node)
-            : base_type(caller, node)
-            { }
+			typedef RH_Base<RH_lookup> base_type;
 
-            RbtNode * exec(
-                    KEY const & key)
-            {
-                if (NULL == this->current())
-                {
-                    return NULL;
-                }
+			RH_lookup(
+					Caller * caller,
+					RbtNode * node)
+			: base_type(caller, node)
+			{ }
 
-                int comp_result = RbtNode::compare(key, this->current()->key);
+			RbtNode * exec(
+					KEY const & key)
+			{
+				if (NULL == this->current())
+				{
+					return NULL;
+				}
 
-                if (0 == comp_result)
-                {
-                    return this->current();
-                }
+				int comp_result = RbtNode::compare(key, this->current()->key);
 
-                if (comp_result < 0)
-                {
-                    return RH_lookup(this, this->current()->left).exec(key);
-                }
+				if (0 == comp_result)
+				{
+					return this->current();
+				}
 
-                return RH_lookup(this, this->current()->right).exec(key);
-            }
-        };
+				if (comp_result < 0)
+				{
+					return RH_lookup(this, this->current()->left).exec(key);
+				}
 
-        // model lookup via ASF
-        // TODO: will be turned into delete() operation
-        RbtNode * lookup(
-                KEY const & key)
-        {
-            RbtNode * n = this->root;
+				return RH_lookup(this, this->current()->right).exec(key);
+			}
+		};
 
-            if (NULL == n)
-            {
-                return NULL;
-            }
+		// model lookup via ASF
+		RbtNode * lookup(
+				KEY const & key)
+		{
+			RbtNode * n = this->root;
 
-            int comp_result = RbtNode::compare(key, n->key);
+			if (NULL == n)
+			{
+				return NULL;
+			}
 
-            if (0 == comp_result)
-            {
-                return n;
-            }
+			int comp_result = RbtNode::compare(key, n->key);
 
-            if (comp_result < 0)
-            {
-                return RH_lookup(NULL, n->left).exec(key);
-            }
+			if (0 == comp_result)
+			{
+				return n;
+			}
 
-            return RH_lookup(NULL, n->right).exec(key);
-        }
+			if (comp_result < 0)
+			{
+				return RH_lookup(NULL, n->left).exec(key);
+			}
 
-    };
+			return RH_lookup(NULL, n->right).exec(key);
+		}
+
+	};
 
 };
