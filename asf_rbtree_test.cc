@@ -15,6 +15,15 @@ int main(
 	typedef RbtNode<int, int> Node;
 
 	{
+		std::cout << "=== TREE 0 (empty) - BEGIN ===" << std::endl;
+		Node::Tree tree;
+		tree.print();
+		tree.del(19L); // check, it doesn't harm
+		tree.print();
+		std::cout << "=== TREE 0 (empty) - END ===" << std::endl << std::endl;
+	}
+
+	{
 		std::cout << "=== TREE 1 - BEGIN ===" << std::endl;
 
 		Node::Tree tree;

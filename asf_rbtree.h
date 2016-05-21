@@ -604,14 +604,7 @@ struct RbtNode {
 		RbtNode * lookup(
 				KEY const & key)
 		{
-			RbtNode * n = this->root;
-
-			if (NULL == n)
-			{
-				return NULL;
-			}
-
-			return RH_lookup(NULL, n).exec(key);
+			return RH_lookup(NULL, this->root).exec(key);
 		}
 
 		// Recursion helper for delete operation

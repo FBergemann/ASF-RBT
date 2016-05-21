@@ -110,6 +110,24 @@ int main()
 	rbtree t = NULL;
 
 	{
+		puts("=== TREE 0 (empty) - BEGIN ===");
+
+		t = rbtree_create();
+
+		print_tree(t);
+		puts("");
+
+		rbtree_delete(t, (void*)19L, compare_long); /* check, it doesn't harm */
+
+		print_tree(t);
+		puts("");
+
+		free(t);
+
+		puts("=== TREE 0 (empty) - END ===\n");
+	}
+
+	{
 		puts("=== TREE 1 - BEGIN ===");
 		t = rbtree_create();
 
