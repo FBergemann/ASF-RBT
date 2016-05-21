@@ -238,7 +238,7 @@ struct RbtNode {
 	static void verify_property_1(
 			RbtNode * n)
 	{
-		if (n == NULL)
+		if (NULL == n)
 		{
 			return;
 		}
@@ -359,7 +359,7 @@ struct RbtNode {
 		}
 
 
-		// Recursion Helper for insert operation
+		// Recursion helper for insert operation
 		struct RH_insert : public RH_Base<RH_insert>
 		{
 			typedef RH_insert Caller;
@@ -540,7 +540,7 @@ struct RbtNode {
 
 				return ret;
 			}
-		};
+		}; // struct RH_insert
 
 		void insert(
 				KEY const & key,
@@ -563,60 +563,7 @@ struct RbtNode {
 
 		}
 
-		// Recursion Helper for insert operation
-		struct RH_del : public RH_Base<RH_del>
-		{
-			typedef RH_del Caller;
-
-			typedef RH_Base<RH_del> base_type;
-
-			RH_del(
-					Caller * caller,
-					RbtNode * node)
-			: base_type(caller, node)
-			{ }
-
-
-			void exec(
-					KEY const & key)
-			{
-				// TODO
-			}
-		};
-
-
-		void del(
-				KEY const & key)
-		{
-			// TODO
-		}
-
-		// iterative version of lookup
-		RbtNode * lookup_it(
-				KEY const & key)
-		{
-			RbtNode * n = this->root;
-			while (n != NULL)
-			{
-				int comp_result = RbtNode::compare(key, n->key);
-				if (0 == comp_result)
-				{
-					return n;
-				}
-				else if (comp_result < 0)
-				{
-					n = n->left;
-				}
-				else
-				{
-					n = n->right;
-				}
-			}
-			return n;
-		}
-
-
-		// Recursion Helper for ASF lookup operation
+		// Recursion helper for ASF lookup operation
 		struct RH_lookup : public RH_Base<RH_lookup>
 		{
 			typedef RH_lookup Caller;
@@ -651,7 +598,7 @@ struct RbtNode {
 
 				return RH_lookup(this, this->current()->right).exec(key);
 			}
-		};
+		}; // struct RH_lookup
 
 		// model lookup via ASF
 		RbtNode * lookup(
@@ -664,19 +611,62 @@ struct RbtNode {
 				return NULL;
 			}
 
-			int comp_result = RbtNode::compare(key, n->key);
+			return RH_lookup(NULL, n).exec(key);
+		}
 
-			if (0 == comp_result)
+		// Recursion helper for delete operation
+		struct RH_del : public RH_Base<RH_del>
+		{
+			typedef RH_del Caller;
+
+			typedef RH_Base<RH_del> base_type;
+
+			RH_del(
+					Caller * caller,
+					RbtNode * node)
+			: base_type(caller, node)
+			{ }
+
+
+			void exec(
+					KEY const & key)
 			{
-				return n;
+				// TODO
 			}
+		};
 
-			if (comp_result < 0)
+
+		/**
+		 * TODO: del should return the old Node
+		 */
+		void del(
+				KEY const & key)
+		{
+			// TODO
+		}
+
+		// iterative version of lookup
+		RbtNode * lookup_it(
+				KEY const & key)
+		{
+			RbtNode * n = this->root;
+			while (n != NULL)
 			{
-				return RH_lookup(NULL, n->left).exec(key);
+				int comp_result = RbtNode::compare(key, n->key);
+				if (0 == comp_result)
+				{
+					return n;
+				}
+				else if (comp_result < 0)
+				{
+					n = n->left;
+				}
+				else
+				{
+					n = n->right;
+				}
 			}
-
-			return RH_lookup(NULL, n->right).exec(key);
+			return n;
 		}
 
 	};

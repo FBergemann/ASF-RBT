@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <cstdlib> // rand()
 #include <iostream>
+#include <sstream>
 
 #define VERIFY_RBTREE
 #define TRACE
@@ -62,8 +63,8 @@ int main(
 
 		for(int i=0; i<20; i++)
 		{
-			int x = 19-i;
-			int y = 19-i;
+			int x = 19 - i;
+			int y = (19 - i) * 10;
 			// printf("Inserting %d -> %d\n\n", x, y);
 			tree.insert(x, y);
 			Node * node = tree.lookup(x);
@@ -73,20 +74,64 @@ int main(
 		}
 		tree.print();
 
+		/*
+		 * some lookup tests
+		 */
+
+		{
+			Node * node = tree.lookup_it(19);
+			std::string value = "<not found>";
+			if (NULL != node)
+			{
+				std::stringstream oss;
+				oss << node->value;
+				value = oss.str();
+			}
+
+			std::cout << "lookup_it(19) = " << value << std::endl;
+		}
+
+		{
+			Node * node = tree.lookup(19);
+			std::string value = "<not found>";
+			if (NULL != node)
+			{
+				std::stringstream oss;
+				oss << node->value;
+				value = oss.str();
+			}
+
+			std::cout << "lookup(19) = " << value << std::endl;
+		}
+
+		/*
+		 * some del(ete) tests
+		 */
+
+		{
+			std::cout << "del(19)" << std::endl;
+			tree.del(19);
+			tree.print();
+		}
+
+#if 0
+		/*
+		 * TODO: this has to be changed, it can't be compared with C-solution
+		 */
+		for (int i = 0; i < 60000; i++)
+		{
+			int x = rand() % 10000;
+#ifdef TRACE
+			print_tree(t);
+			printf("Deleting key %d\n\n", x);
+#endif
+			rbtree_delete(t, (void*)x, compare_int);
+		}
+#endif
+
 		std::cout << "=== TREE 3 - END ===" << std::endl << std::endl;
 	}
 
-#if 0
-	for (int i=0; i<60000; i++)
-	{
-		int x = rand() % 10000;
-#ifdef TRACE
-		print_tree(t);
-		printf("Deleting key %d\n\n", x);
-#endif
-		rbtree_delete(t, (void*)x, compare_int);
-	}
-#endif
 
 	return 0;
 }

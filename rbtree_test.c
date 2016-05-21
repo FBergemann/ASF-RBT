@@ -166,7 +166,7 @@ int main()
 		for(i=0; i<20; i++)
 		{
 			long x = 19 - i;
-			long y = 19 - i;
+			long y = (19 - i) * 10;
 #ifdef TRACE
 			print_tree(t);
 			printf("Inserting %d -> %d\n\n", x, y);
@@ -178,8 +178,54 @@ int main()
 		print_tree(t);
 		puts("");
 
+		/*
+		 * some lookup tests
+		 * calling #2 times, because of #2 different implementations for C++
+		 * (to compare the outputs)
+		 */
+
+		{
+			void * node = rbtree_lookup(t, (void*)19L, compare_long);
+
+			if (NULL == node)
+			{
+				printf("lookup_it(19) = <not found>\n");
+			}
+			else
+			{
+				printf("lookup_it(19) = %ld\n", (long) node);
+			}
+		}
+
+		{
+			void * node = rbtree_lookup(t, (void*)19L, compare_long);
+
+			if (NULL == node)
+			{
+				printf("lookup(19) = <not found>\n");
+			}
+			else
+			{
+				printf("lookup(19) = %ld\n", (long) node);
+			}
+		}
+
+		/*
+		 * some del(ete) tests
+		 */
+
+		{
+			printf("del(19)\n");
+			rbtree_delete(t, (void*)19L, compare_long);
+			print_tree(t);
+			puts("");
+		}
+
 #if 0
-		for(i=0; i<60000; i++)
+		/*
+		 * TODO: this has to be changed, it can't be compared with C++-solution
+		 */
+		for (i = 0; i < 60000; i++)
 		{
 			int x = rand() % 10000;
 #ifdef TRACE
