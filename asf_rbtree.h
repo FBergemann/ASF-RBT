@@ -563,8 +563,66 @@ struct RbtNode {
 
 		}
 
-		// Recursion helper for ASF lookup operation
-		struct RH_lookup : public RH_Base<RH_lookup>
+		template <typename Caller>
+		struct RH_dummy : public RH_Base<RH_dummy<Caller> >
+		{
+			typedef RH_Base<RH_dummy> base_type;
+
+			RH_dummy(
+					Caller * caller,
+					RbtNode * node)
+			: base_type(caller, node)
+			{ }
+
+			// TODO: turn into compile time property
+			static bool isDummy()
+			{
+				return true;
+			}
+
+			RbtNode * exec(
+					KEY const & key)
+			{
+				// TODO: should not be used - raise exception
+				return NULL;
+			}
+		};
+
+		// Recursion helper for ASF delete operation
+		template <typename Caller>
+		struct RH_del : public RH_Base<Caller >
+		{
+			typedef RH_Base<Caller> base_type;
+
+			RH_del(
+					Caller * caller,
+					RbtNode * node)
+			: base_type(caller, node)
+			{ }
+
+			// TODO: turn into compile time property
+			static bool isDummy()
+			{
+				return false;
+			}
+
+			RbtNode * exec(
+					KEY const & key)
+			{
+				std::cout << "hello from RH_del::exec()" << std::endl;
+				std::cout << "key = " << key << std::endl;
+				std::cout << "this->current()->key = " << this->current()->key << std::endl;
+				return NULL; // TODO
+			}
+		};
+
+		/**
+		 * Recursion helper for ASF lookup operation.
+		 * It uses an optional ASF PostProcessor after lookup.
+		 * This makes is suport ASF delete operation.
+		 */
+		template <bool DeleteIndicator>
+		struct RH_lookup : public RH_Base<RH_lookup<DeleteIndicator> >
 		{
 			typedef RH_lookup Caller;
 
@@ -588,54 +646,54 @@ struct RbtNode {
 
 				if (0 == comp_result)
 				{
+					/*
+					 * element found
+					 */
+
+					/*
+					 * TODO
+					 *  +) turn run-time into compile-time
+					 *  +) make more flexible for ANY kind of post-processing
+					 */
+
+					if (true == DeleteIndicator)
+					{
+						return RH_del<Caller>(this, this->current()).exec(key);
+					}
+
 					return this->current();
 				}
 
 				if (comp_result < 0)
 				{
-					return RH_lookup(this, this->current()->left).exec(key);
+					return Caller(this, this->current()->left).exec(key);
 				}
 
-				return RH_lookup(this, this->current()->right).exec(key);
+				return Caller(this, this->current()->right).exec(key);
 			}
 		}; // struct RH_lookup
+
+
 
 		// model lookup via ASF
 		RbtNode * lookup(
 				KEY const & key)
 		{
-			return RH_lookup(NULL, this->root).exec(key);
+			return RH_lookup<false>(NULL, this->root).exec(key);
 		}
-
-		// Recursion helper for delete operation
-		struct RH_del : public RH_Base<RH_del>
-		{
-			typedef RH_del Caller;
-
-			typedef RH_Base<RH_del> base_type;
-
-			RH_del(
-					Caller * caller,
-					RbtNode * node)
-			: base_type(caller, node)
-			{ }
-
-
-			void exec(
-					KEY const & key)
-			{
-				// TODO
-			}
-		};
 
 
 		/**
-		 * TODO: del should return the old Node
+		 *  Delete operation
+		 *  This uses RH_lookup
+		 *  and adds a trailing processing for RH_delete
+		 *  on the stack
 		 */
-		void del(
+		RbtNode * del(
 				KEY const & key)
 		{
-			// TODO
+			return RH_lookup<true>(NULL, this->root).exec(key);
+
 		}
 
 		// iterative version of lookup
