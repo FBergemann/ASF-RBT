@@ -254,14 +254,10 @@ struct RbtNode {
 	// Recursion Helper for verify_property_4()
 	struct RH_verify_property_4 : public RH_Base
 	{
-		typedef RH_verify_property_4 Caller;
-
-		typedef RH_Base base_type;
-
 		RH_verify_property_4(
-				Caller * caller,
+				RH_Base * caller,
 				RbtNode * node)
-		: base_type(caller, node)
+		: RH_Base(caller, node)
 		{ }
 
 		void exec(void)
@@ -282,8 +278,8 @@ struct RbtNode {
 					assert (RbtNode::GetColor(this->stack_c->stack_n) == BLACK);
 				}
 			}
-			Caller(this, this->current()->left).exec();
-			Caller(this, this->current()->right).exec();
+			RH_verify_property_4(this, this->current()->left).exec();	// recursion
+			RH_verify_property_4(this, this->current()->right).exec();	// recursion
 		}
 	};
 
@@ -361,14 +357,10 @@ struct RbtNode {
 		// Recursion helper for insert operation
 		struct RH_insert : public RH_Base
 		{
-			typedef RH_insert Caller;
-
-			typedef RH_Base base_type;
-
 			RH_insert(
-					Caller * caller,
+					RH_Base * caller,
 					RbtNode * node)
-			: base_type(caller, node)
+			: RH_Base(caller, node)
 			{ }
 
 			void insert_postop2(
@@ -408,11 +400,11 @@ struct RbtNode {
 						RbtNode *save = this->current()->left;
 						this->rotate_right(this->current_caller(), root);
 						std::swap(this->current(), save);
-						Caller(this, save).insert_postop2(root);
+						RH_insert(this, save).insert_postop2(root); // recursion
 					}
 					else
 					{
-						Caller(this, this->current()->left).insert_postop2(root);
+						RH_insert(this, this->current()->left).insert_postop2(root); // recursion
 					}
 				}
 
@@ -440,11 +432,11 @@ struct RbtNode {
 						RbtNode *save = this->current()->right;
 						this->rotate_left(this->current_caller(), root);
 						std::swap(this->current(), save);
-						Caller(this, save).insert_postop2(root);
+						RH_insert(this, save).insert_postop2(root); // recursion
 					}
 					else
 					{
-						Caller(this, this->current()->right).insert_postop2(root);
+						RH_insert(this, this->current()->right).insert_postop2(root); // recursion
 					}
 				}
 
@@ -474,12 +466,12 @@ struct RbtNode {
 					if (this->current() == this->parent()->right && this->parent() == this->grandparent()->left)
 					{
 						this->rotate_left(this->parent_caller(), root);
-						Caller(this, this->current()->left).insert_postop2(root);
+						RH_insert(this, this->current()->left).insert_postop2(root); // recursion
 					}
 					else if (this->current() == this->parent()->left && this->parent() == this->grandparent()->right)
 					{
 						this->rotate_right(this->parent_caller(), root);
-						Caller(this, this->current()->right).insert_postop2(root);
+						RH_insert(this, this->current()->right).insert_postop2(root); // recursion
 					}
 					else
 					{
@@ -512,7 +504,7 @@ struct RbtNode {
 					}
 					else
 					{
-						ret = Caller(this, this->current()->left).exec(root_node, node_to_insert);
+						ret = RH_insert(this, this->current()->left).exec(root_node, node_to_insert); // recursion
 					}
 				}
 				else
@@ -524,7 +516,7 @@ struct RbtNode {
 					}
 					else
 					{
-						ret = Caller(this, this->current()->right).exec(root_node, node_to_insert);
+						ret = RH_insert(this, this->current()->right).exec(root_node, node_to_insert); // recursion
 					}
 				}
 
@@ -545,7 +537,6 @@ struct RbtNode {
 				KEY const & key,
 				VALUE const & value)
 		{
-
 			RbtNode * node_to_insert = new RbtNode(key, value);
 
 			if (this->root == NULL)
@@ -569,14 +560,10 @@ struct RbtNode {
 		 */
 		struct RH_lookup : public RH_Base
 		{
-			typedef RH_lookup Caller;
-
-			typedef RH_Base base_type;
-
 			RH_lookup(
-					Caller * caller,
+					RH_Base * caller,
 					RbtNode * node)
-			: base_type(caller, node)
+			: RH_Base(caller, node)
 			{ }
 
 			RbtNode * exec(
@@ -600,10 +587,10 @@ struct RbtNode {
 
 				if (comp_result < 0)
 				{
-					return Caller(this, this->current()->left).exec(key);
+					return RH_lookup(this, this->current()->left).exec(key);
 				}
 
-				return Caller(this, this->current()->right).exec(key);
+				return RH_lookup(this, this->current()->right).exec(key);
 
 			}
 		}; // struct RH_lookup
@@ -621,14 +608,10 @@ struct RbtNode {
 		// TODO: "merge with" respectively "implement in terms of" RH_lookup
 		struct RH_del : public RH_Base
 		{
-			typedef RH_del Caller;
-
-			typedef RH_Base base_type;
-
 			RH_del(
-					Caller * caller,
+					RH_Base * caller,
 					RbtNode * node)
-			: base_type(caller, node)
+			: RH_Base(caller, node)
 			{ }
 
 			RbtNode * exec(
@@ -658,15 +641,15 @@ struct RbtNode {
 						std::cout << "Copy key/value from predecessor and then delete it instead" << std::endl;
 
 						/* Copy key/value from predecessor and then delete it instead */
-						RbtNode * pred   = current->left;
-					    while (NULL != pred->right)
-					    {
-					    	pred = pred->right;
-					    }
+						RbtNode * pred = current->left;
 
-				        current->key   = pred->key;
-				        current->value = pred->value;
+						while (NULL != pred->right)
+						{
+							pred = pred->right;
+						}
 
+						current->key   = pred->key;
+						current->value = pred->value;
 					}
 
 					// TODO: return old element
@@ -676,10 +659,10 @@ struct RbtNode {
 
 				if (comp_result < 0)
 				{
-					return Caller(this, this->current()->left).exec(key);
+					return RH_del(this, this->current()->left).exec(key);
 				}
 
-				return Caller(this, this->current()->right).exec(key);
+				return RH_del(this, this->current()->right).exec(key);
 
 			}
 
