@@ -87,14 +87,13 @@ struct RbtNode {
 	}
 
 	// Recursion Helper Base Class
-	template <typename CALLER>
 	struct RH_Base
 	{
-		CALLER *stack_c;
+		RH_Base *stack_c;
 		RbtNode *stack_n;
 
 		RH_Base(
-				CALLER * caller,
+				RH_Base * caller,
 				RbtNode * node)
 		: stack_c(caller),
 		  stack_n(node)
@@ -253,11 +252,11 @@ struct RbtNode {
 	}
 
 	// Recursion Helper for verify_property_4()
-	struct RH_verify_property_4 : RH_Base <RH_verify_property_4>
+	struct RH_verify_property_4 : public RH_Base
 	{
 		typedef RH_verify_property_4 Caller;
 
-		typedef RH_Base<RH_verify_property_4> base_type;
+		typedef RH_Base base_type;
 
 		RH_verify_property_4(
 				Caller * caller,
@@ -360,11 +359,11 @@ struct RbtNode {
 
 
 		// Recursion helper for insert operation
-		struct RH_insert : public RH_Base<RH_insert>
+		struct RH_insert : public RH_Base
 		{
 			typedef RH_insert Caller;
 
-			typedef RH_Base<RH_insert> base_type;
+			typedef RH_Base base_type;
 
 			RH_insert(
 					Caller * caller,
@@ -563,70 +562,16 @@ struct RbtNode {
 
 		}
 
-		template <typename Caller>
-		struct RH_dummy : public RH_Base<RH_dummy<Caller> >
-		{
-			typedef RH_Base<RH_dummy> base_type;
-
-			RH_dummy(
-					Caller * caller,
-					RbtNode * node)
-			: base_type(caller, node)
-			{ }
-
-			// TODO: turn into compile time property
-			static bool isDummy()
-			{
-				return true;
-			}
-
-			RbtNode * exec(
-					KEY const & key)
-			{
-				// TODO: should not be used - raise exception
-				return NULL;
-			}
-		};
-
-		// Recursion helper for ASF delete operation
-		template <typename Caller>
-		struct RH_del : public RH_Base<Caller >
-		{
-			typedef RH_Base<Caller> base_type;
-
-			RH_del(
-					Caller * caller,
-					RbtNode * node)
-			: base_type(caller, node)
-			{ }
-
-			// TODO: turn into compile time property
-			static bool isDummy()
-			{
-				return false;
-			}
-
-			RbtNode * exec(
-					KEY const & key)
-			{
-				std::cout << "hello from RH_del::exec()" << std::endl;
-				std::cout << "key = " << key << std::endl;
-				std::cout << "this->current()->key = " << this->current()->key << std::endl;
-				return NULL; // TODO
-			}
-		};
-
 		/**
 		 * Recursion helper for ASF lookup operation.
 		 * It uses an optional ASF PostProcessor after lookup.
 		 * This makes is suport ASF delete operation.
 		 */
-		template <bool DeleteIndicator>
-		struct RH_lookup : public RH_Base<RH_lookup<DeleteIndicator> >
+		struct RH_lookup : public RH_Base
 		{
 			typedef RH_lookup Caller;
 
-			typedef RH_Base<RH_lookup> base_type;
+			typedef RH_Base base_type;
 
 			RH_lookup(
 					Caller * caller,
@@ -650,17 +595,6 @@ struct RbtNode {
 					 * element found
 					 */
 
-					/*
-					 * TODO
-					 *  +) turn run-time into compile-time
-					 *  +) make more flexible for ANY kind of post-processing
-					 */
-
-					if (true == DeleteIndicator)
-					{
-						return RH_del<Caller>(this, this->current()).exec(key);
-					}
-
 					return this->current();
 				}
 
@@ -670,18 +604,86 @@ struct RbtNode {
 				}
 
 				return Caller(this, this->current()->right).exec(key);
+
 			}
 		}; // struct RH_lookup
-
 
 
 		// model lookup via ASF
 		RbtNode * lookup(
 				KEY const & key)
 		{
-			return RH_lookup<false>(NULL, this->root).exec(key);
+			return RH_lookup(NULL, this->root).exec(key);
 		}
 
+
+		// Recursion helper for ASF delete operation
+		// TODO: "merge with" respectively "implement in terms of" RH_lookup
+		struct RH_del : public RH_Base
+		{
+			typedef RH_del Caller;
+
+			typedef RH_Base base_type;
+
+			RH_del(
+					Caller * caller,
+					RbtNode * node)
+			: base_type(caller, node)
+			{ }
+
+			RbtNode * exec(
+					KEY const & key)
+			{
+				if (NULL == this->current())
+				{
+					return NULL;
+				}
+
+				int comp_result = RbtNode::compare(key, this->current()->key);
+
+				if (0 == comp_result)
+				{
+					/*
+					 * element found
+					 */
+
+					RbtNode * current = this->current();
+
+					std::cout << "hello from RH_del::exec()" << std::endl;
+					std::cout << "key = " << key << std::endl;
+					std::cout << "this->current()->key = " << current->key << std::endl;
+
+					if (NULL != current->left and NULL != current->right)
+					{
+						std::cout << "Copy key/value from predecessor and then delete it instead" << std::endl;
+
+						/* Copy key/value from predecessor and then delete it instead */
+						RbtNode * pred   = current->left;
+					    while (NULL != pred->right)
+					    {
+					    	pred = pred->right;
+					    }
+
+				        current->key   = pred->key;
+				        current->value = pred->value;
+
+					}
+
+					// TODO: return old element
+					// return this->current();
+					return NULL;
+				}
+
+				if (comp_result < 0)
+				{
+					return Caller(this, this->current()->left).exec(key);
+				}
+
+				return Caller(this, this->current()->right).exec(key);
+
+			}
+
+		};
 
 		/**
 		 *  Delete operation
@@ -692,9 +694,10 @@ struct RbtNode {
 		RbtNode * del(
 				KEY const & key)
 		{
-			return RH_lookup<true>(NULL, this->root).exec(key);
+			return RH_del(NULL, this->root).exec(key);
 
 		}
+
 
 		// iterative version of lookup
 		RbtNode * lookup_it(

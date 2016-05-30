@@ -233,8 +233,8 @@ int main()
 		 */
 
 		{
-			printf("del(19)\n");
-			rbtree_delete(t, (void*)19L, compare_long);
+			printf("del(8)\n");
+			rbtree_delete(t, (void*)8L, compare_long);
 			print_tree(t);
 			puts("");
 		}

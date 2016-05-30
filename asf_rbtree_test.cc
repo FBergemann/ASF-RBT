@@ -118,8 +118,8 @@ int main(
 		 */
 
 		{
-			std::cout << "del(19)" << std::endl;
-			tree.del(19);
+			std::cout << "del(8)" << std::endl;
+			tree.del(8);
 			tree.print();
 		}
 
