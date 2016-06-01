@@ -554,16 +554,54 @@ struct RbtNode {
 		}
 
 		/**
+		 * Extended base class for lookup and delete
+		 * It introduces function chaining.
+		 * A next function can be given a tail-end successor function.
+		 * This enables implementing "delete" based on "lookup"
+		 */
+		struct RH_Base_Ext : public RH_Base
+		{
+			RH_Base_Ext * successor;
+
+			RH_Base_Ext(
+				RH_Base * caller,
+				RbtNode * node,
+				RH_Base_Ext * successor)
+			: RH_Base(caller, node),
+			  successor(successor)
+			{ }
+
+			/*
+			 * offline setters for successor support
+			 */
+			inline void SetCaller(
+					RH_Base * caller)
+			{
+				RH_Base::stack_c = caller;
+			}
+
+			inline void SetNode(
+					RbtNode * node)
+			{
+				RH_Base::stack_n = node;
+			}
+
+			virtual RbtNode * exec(
+					KEY const & key) = 0;
+		};
+
+		/**
 		 * Recursion helper for ASF lookup operation.
 		 * It uses an optional ASF PostProcessor after lookup.
 		 * This makes is suport ASF delete operation.
 		 */
-		struct RH_lookup : public RH_Base
+		struct RH_lookup : public RH_Base_Ext
 		{
 			RH_lookup(
 					RH_Base * caller,
-					RbtNode * node)
-			: RH_Base(caller, node)
+					RbtNode * node,
+					RH_Base_Ext * successor = NULL)
+			: RH_Base_Ext(caller, node, successor)
 			{ }
 
 			RbtNode * exec(
@@ -582,15 +620,24 @@ struct RbtNode {
 					 * element found
 					 */
 
-					return this->current();
+					if (NULL != RH_Base_Ext::successor)
+					{
+						RH_Base_Ext::successor->SetCaller(this);
+						RH_Base_Ext::successor->SetNode(this->current());
+
+						return RH_Base_Ext::successor->exec(key); // early exit
+					}
+
+					return this->current(); // early exit
+
 				}
 
 				if (comp_result < 0)
 				{
-					return RH_lookup(this, this->current()->left).exec(key);
+					return RH_lookup(this, this->current()->left, RH_Base_Ext::successor).exec(key);
 				}
 
-				return RH_lookup(this, this->current()->right).exec(key);
+				return RH_lookup(this, this->current()->right, RH_Base_Ext::successor).exec(key);
 
 			}
 		}; // struct RH_lookup
@@ -600,70 +647,74 @@ struct RbtNode {
 		RbtNode * lookup(
 				KEY const & key)
 		{
-			return RH_lookup(NULL, this->root).exec(key);
+			return RH_lookup(NULL, this->root, NULL).exec(key);
 		}
 
 
-		// Recursion helper for ASF delete operation
-		// TODO: "merge with" respectively "implement in terms of" RH_lookup
-		struct RH_del : public RH_Base
+		// Recursion helper #1 for ASF delete operation
+		struct RH_del_1 : public RH_Base_Ext
 		{
-			RH_del(
+			RH_del_1(
 					RH_Base * caller,
-					RbtNode * node)
-			: RH_Base(caller, node)
+					RbtNode * node,
+					RH_Base_Ext * successor = NULL)
+			: RH_Base_Ext(caller, node, successor)
 			{ }
 
 			RbtNode * exec(
 					KEY const & key)
 			{
-				if (NULL == this->current())
+				RbtNode * current = this->current();
+
+				std::cout << "hello from RH_del::exec()" << std::endl;
+				std::cout << "key = " << key << std::endl;
+				std::cout << "this->current()->key = " << current->key << std::endl;
+
+				if (NULL != current->left and NULL != current->right)
 				{
-					return NULL;
-				}
+					std::cout << "Copy key/value from predecessor and then delete predecessor instead" << std::endl;
 
-				int comp_result = RbtNode::compare(key, this->current()->key);
+					/* Copy key/value from predecessor node and then delete predecessor node instead */
+					/* TODO: use standard function, not copy & paste here */
+					RbtNode * pred = current->left;
 
-				if (0 == comp_result)
-				{
-					/*
-					 * element found
-					 */
-
-					RbtNode * current = this->current();
-
-					std::cout << "hello from RH_del::exec()" << std::endl;
-					std::cout << "key = " << key << std::endl;
-					std::cout << "this->current()->key = " << current->key << std::endl;
-
-					if (NULL != current->left and NULL != current->right)
+					while (NULL != pred->right)
 					{
-						std::cout << "Copy key/value from predecessor and then delete it instead" << std::endl;
-
-						/* Copy key/value from predecessor and then delete it instead */
-						RbtNode * pred = current->left;
-
-						while (NULL != pred->right)
-						{
-							pred = pred->right;
-						}
-
-						current->key   = pred->key;
-						current->value = pred->value;
+						pred = pred->right;
 					}
 
-					// TODO: return old element
-					// return this->current();
-					return NULL;
+					current->key   = pred->key;
+					current->value = pred->value;
+
+					/* walk to predecessor value and continue with next successor function there */
+					{
+						RH_del_2 successor(NULL, NULL, NULL);
+						return RH_lookup(this, this->current()->left, &successor).exec(pred->key);
+					}
+
 				}
 
-				if (comp_result < 0)
-				{
-					return RH_del(this, this->current()->left).exec(key);
-				}
+				// use current node for next function
+				return RH_del_2(this, this->current(), NULL).exec(key);
+			}
 
-				return RH_del(this, this->current()->right).exec(key);
+		};
 
+		// Recursion helper #1 for ASF delete operation
+		struct RH_del_2 : public RH_Base_Ext
+		{
+			RH_del_2(
+					RH_Base * caller,
+					RbtNode * node,
+					RH_Base_Ext * successor)
+			: RH_Base_Ext(caller, node, successor)
+			{ }
+
+			RbtNode * exec(
+					KEY const & key)
+			{
+				std::cout << "RH_del_2 invoked (TODO: is a dummy only yet)" << std::endl;
+				return NULL;
 			}
 
 		};
@@ -677,8 +728,8 @@ struct RbtNode {
 		RbtNode * del(
 				KEY const & key)
 		{
-			return RH_del(NULL, this->root).exec(key);
-
+			RH_del_1 successor(NULL, NULL, NULL);
+			return RH_lookup(NULL, this->root, &successor).exec(key);
 		}
 
 
