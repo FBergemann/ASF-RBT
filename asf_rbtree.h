@@ -86,6 +86,21 @@ struct RbtNode {
 	    }
 	}
 
+	/**
+	 * get the maximum value of current positistack_n->on down the tree.
+	 * it's the leaf at most right position
+	 */
+	inline RbtNode * maximum_node(void)
+	{
+		RbtNode *n = this;
+		while (NULL != n->right)
+		{
+			n = n->right;
+		}
+		return n;
+	}
+
+
 	// Recursion Helper Base Class
 	struct RH_Base
 	{
@@ -165,20 +180,6 @@ struct RbtNode {
 			return stack_c->stack_c;
 		}
 
-		/**
-		 * get the maximum value of current position down the tree.
-		 * it's the leaf at most right position
-		 */
-		inline RbtNode * maximum_node(void)
-		{
-			RbtNode *n = stack_n;
-			while (NULL != n->right)
-			{
-				n = n->right;
-			}
-			return n;
-		}
-
 		void replace_node(
 				RH_Base * caller,
 				RbtNode * newn,
@@ -216,6 +217,22 @@ struct RbtNode {
 			replace_node(caller, L, root);
 			caller->stack_n->left = L->right;
 			L->right = caller->stack_n;
+		}
+
+		void PrintStack(
+				std::string const & headline = "")
+		{
+			RH_Base *cur = this;
+
+			std::cout << "stack-trace: " << headline << ": ";
+
+			do
+			{
+				std::cout << cur->stack_n->key << " - ";
+				cur = cur->stack_c;
+			} while (NULL != cur);
+
+			std::cout << std::endl;
 		}
 	};
 
@@ -622,7 +639,7 @@ struct RbtNode {
 
 					if (NULL != RH_Base_Ext::successor)
 					{
-						RH_Base_Ext::successor->SetCaller(this);
+						RH_Base_Ext::successor->SetCaller(this->stack_c); // back to the caller level to avoid additional level
 						RH_Base_Ext::successor->SetNode(this->current());
 
 						return RH_Base_Ext::successor->exec(key); // early exit
@@ -666,29 +683,22 @@ struct RbtNode {
 			{
 				RbtNode * current = this->current();
 
-				std::cout << "hello from RH_del::exec()" << std::endl;
-				std::cout << "key = " << key << std::endl;
-				std::cout << "this->current()->key = " << current->key << std::endl;
-
 				if (NULL != current->left and NULL != current->right)
 				{
-					std::cout << "Copy key/value from predecessor and then delete predecessor instead" << std::endl;
-
 					/* Copy key/value from predecessor node and then delete predecessor node instead */
-					/* TODO: use standard function, not copy & paste here */
-					RbtNode * pred = current->left;
-
-					while (NULL != pred->right)
-					{
-						pred = pred->right;
-					}
-
+					RbtNode * pred = current->left->maximum_node();
 					current->key   = pred->key;
 					current->value = pred->value;
 
-					/* walk to predecessor value and continue with next successor function there */
+					/* WALK to predecessor value and continue with next successor function there */
 					{
+						/*
+						 * delete operation successor for RH_lookup
+						 * (note, that we would even stack successors,
+						 *  the last argument could be *another* successor)
+						 */
 						RH_del_2 successor(NULL, NULL, NULL);
+						RH_Base::PrintStack("before 2nd lookup");
 						return RH_lookup(this, this->current()->left, &successor).exec(pred->key);
 					}
 
@@ -714,6 +724,7 @@ struct RbtNode {
 					KEY const & key)
 			{
 				std::cout << "RH_del_2 invoked (TODO: is a dummy only yet)" << std::endl;
+				RH_Base::PrintStack("del2");
 				return NULL;
 			}
 
