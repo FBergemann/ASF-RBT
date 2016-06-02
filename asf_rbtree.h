@@ -70,7 +70,7 @@ struct RbtNode {
 	static Color GetColor(
 			RbtNode * n)
 	{
-		return (n == NULL)?BLACK:n->color;
+		return (n == NULL) ? BLACK : n->color;
 	}
 
 	void MakeRed(void)
@@ -694,11 +694,10 @@ struct RbtNode {
 					{
 						/*
 						 * delete operation successor for RH_lookup
-						 * (note, that we would even stack successors,
+						 * (note, that we could even stack successors,
 						 *  the last argument could be *another* successor)
 						 */
 						RH_del_2 successor(NULL, NULL, NULL);
-						RH_Base::PrintStack("before 2nd lookup");
 						return RH_lookup(this, this->current()->left, &successor).exec(pred->key);
 					}
 
@@ -723,9 +722,25 @@ struct RbtNode {
 			RbtNode * exec(
 					KEY const & key)
 			{
-				std::cout << "RH_del_2 invoked (TODO: is a dummy only yet)" << std::endl;
-				RH_Base::PrintStack("del2");
-				return NULL;
+				// RH_Base::PrintStack("del2");
+
+			    assert(this->stack_n->left == NULL || this->stack_n->right == NULL);
+			    RbtNode *child = this->stack_n->right == NULL ? this->stack_n->left : this->stack_n->right;
+			    if (BLACK == this->current()->color)
+			    {
+			    	this->current()->color = RbtNode::GetColor(child);
+//			    	delete_case1(t, n);
+			    }
+//			    replace_node(t, n, child);
+//			    if (n->parent == NULL && child != NULL)
+//			    {
+//			        child->color = BLACK;
+//			    }
+//			    free(n);
+//
+//			    verify_properties(t);
+
+			    return NULL;
 			}
 
 		};
