@@ -180,6 +180,12 @@ struct RbtNode {
 			return stack_c->stack_c;
 		}
 
+		/**
+		 * replaces the node of *caller by new node *newn
+		 *
+		 * Note, that this changes *caller's PARENTs left of right node
+		 * unless there is no parent and caller is the root itself.
+		 */
 		void replace_node(
 				RH_Base * caller,
 				RbtNode * newn,
@@ -604,6 +610,7 @@ struct RbtNode {
 			}
 
 			virtual RbtNode * exec(
+					RbtNode *& root_node,
 					KEY const & key) = 0;
 		};
 
@@ -622,6 +629,7 @@ struct RbtNode {
 			{ }
 
 			RbtNode * exec(
+					RbtNode *& root_node,
 					KEY const & key)
 			{
 				if (NULL == this->current())
@@ -642,7 +650,7 @@ struct RbtNode {
 						RH_Base_Ext::successor->SetCaller(this->stack_c); // back to the caller level to avoid additional level
 						RH_Base_Ext::successor->SetNode(this->current());
 
-						return RH_Base_Ext::successor->exec(key); // early exit
+						return RH_Base_Ext::successor->exec(root_node, key); // early exit
 					}
 
 					return this->current(); // early exit
@@ -651,10 +659,10 @@ struct RbtNode {
 
 				if (comp_result < 0)
 				{
-					return RH_lookup(this, this->current()->left, RH_Base_Ext::successor).exec(key);
+					return RH_lookup(this, this->current()->left, RH_Base_Ext::successor).exec(root_node, key);
 				}
 
-				return RH_lookup(this, this->current()->right, RH_Base_Ext::successor).exec(key);
+				return RH_lookup(this, this->current()->right, RH_Base_Ext::successor).exec(root_node, key);
 
 			}
 		}; // struct RH_lookup
@@ -664,7 +672,7 @@ struct RbtNode {
 		RbtNode * lookup(
 				KEY const & key)
 		{
-			return RH_lookup(NULL, this->root, NULL).exec(key);
+			return RH_lookup(NULL, this->root, NULL).exec(this->root, key);
 		}
 
 
@@ -679,6 +687,7 @@ struct RbtNode {
 			{ }
 
 			RbtNode * exec(
+					RbtNode *& root_node,
 					KEY const & key)
 			{
 				RbtNode * current = this->current();
@@ -693,18 +702,18 @@ struct RbtNode {
 					/* WALK to predecessor value and continue with next successor function there */
 					{
 						/*
-						 * delete operation successor for RH_lookup
-						 * (note, that we could even stack successors,
-						 *  the last argument could be *another* successor)
+						 * delete operation successor for RH_lookup again
+						 * (note, that we could even STACK successors,
+						 *  the last argument of the successor could be *another* successor again)
 						 */
 						RH_del_2 successor(NULL, NULL, NULL);
-						return RH_lookup(this, this->current()->left, &successor).exec(pred->key);
+						return RH_lookup(this, this->current()->left, &successor).exec(root_node, pred->key);
 					}
 
 				}
 
 				// use current node for next function
-				return RH_del_2(this, this->current(), NULL).exec(key);
+				return RH_del_2(this, this->current(), NULL).exec(root_node, key);
 			}
 
 		};
@@ -719,19 +728,142 @@ struct RbtNode {
 			: RH_Base_Ext(caller, node, successor)
 			{ }
 
+
+			/*
+			 * helper adopted from the C reference implementation
+			 */
+			void delete_case1(
+					RbtNode *& root_node)
+			{
+			    if (NULL == this->parent())
+			    {
+			        return;
+			    }
+			    else
+			    {
+			    	delete_case2(root_node);
+			    }
+			}
+
+			void delete_case2(
+					RbtNode *& root_node)
+			{
+			    if (RED == GetColor(this->sibling()))
+			    {
+			        this->parent()->color  = RED;
+			        this->sibling()->color = BLACK;
+
+		        	// TODO: 	incomplete! - rotate_left() and rotate_right() change the stack
+		        	// 			however for delete the current() node is a leaf node
+		        	//			while rotate_left deals with any node
+		        	//			so it's more generic than required here
+			        if (this->current() == this->parent()->left) // TODO: introduce IsLeft() / IsRight()
+			        {
+			            this->rotate_left(this->parent_caller(), root_node);
+			            // the node to delete is now the left node of current()
+			            // -> add another level for next operation
+			            //    see insert_postop1()
+			        }
+			        else
+			        {
+			            this->rotate_right(this->parent_caller(), root_node);
+			            // the node to delete is now the right node of current()
+			            // -> add another level for next operation
+			            //    see insert_postop1()
+			        }
+			    }
+
+			    // delete_case3(root_node);
+			}
+
+#if 0
+			void delete_case3(
+					RbtNode *& root_node)
+			{
+			    if (node_color(n->parent) == BLACK &&
+			        node_color(sibling(n)) == BLACK &&
+			        node_color(sibling(n)->left) == BLACK &&
+			        node_color(sibling(n)->right) == BLACK)
+			    {
+			        sibling(n)->color = RED;
+			        delete_case1(t, n->parent);
+			    }
+			    else
+			    {
+			        delete_case4(t, n);
+			    }
+			}
+
+			void delete_case4(rbtree t, node n) {
+			    if (node_color(n->parent) == RED &&
+			        node_color(sibling(n)) == BLACK &&
+			        node_color(sibling(n)->left) == BLACK &&
+			        node_color(sibling(n)->right) == BLACK)
+			    {
+			        sibling(n)->color = RED;
+			        n->parent->color = BLACK;
+			    }
+			    else
+			        delete_case5(t, n);
+			}
+
+			void delete_case5(rbtree t, node n) {
+			    if (n == n->parent->left &&
+			        node_color(sibling(n)) == BLACK &&
+			        node_color(sibling(n)->left) == RED &&
+			        node_color(sibling(n)->right) == BLACK)
+			    {
+			        sibling(n)->color = RED;
+			        sibling(n)->left->color = BLACK;
+			        rotate_right(t, sibling(n));
+			    }
+			    else if (n == n->parent->right &&
+			             node_color(sibling(n)) == BLACK &&
+			             node_color(sibling(n)->right) == RED &&
+			             node_color(sibling(n)->left) == BLACK)
+			    {
+			        sibling(n)->color = RED;
+			        sibling(n)->right->color = BLACK;
+			        rotate_left(t, sibling(n));
+			    }
+			    delete_case6(t, n);
+			}
+
+			void delete_case6(rbtree t, node n) {
+			    sibling(n)->color = node_color(n->parent);
+			    n->parent->color = BLACK;
+			    if (n == n->parent->left) {
+			        assert (node_color(sibling(n)->right) == RED);
+			        sibling(n)->right->color = BLACK;
+			        rotate_left(t, n->parent);
+			    }
+			    else
+			    {
+			        assert (node_color(sibling(n)->left) == RED);
+			        sibling(n)->left->color = BLACK;
+			        rotate_right(t, n->parent);
+			    }
+			}
+#endif
+
 			RbtNode * exec(
+					RbtNode *& root_node,
 					KEY const & key)
 			{
 				// RH_Base::PrintStack("del2");
 
 			    assert(this->stack_n->left == NULL || this->stack_n->right == NULL);
-			    RbtNode *child = this->stack_n->right == NULL ? this->stack_n->left : this->stack_n->right;
+
+			    RbtNode *child = (this->stack_n->right == NULL) ? this->stack_n->left : this->stack_n->right;
+
 			    if (BLACK == this->current()->color)
 			    {
 			    	this->current()->color = RbtNode::GetColor(child);
-//			    	delete_case1(t, n);
+			    	delete_case1(root_node);
 			    }
+
 //			    replace_node(t, n, child);
+
 //			    if (n->parent == NULL && child != NULL)
 //			    {
 //			        child->color = BLACK;
@@ -755,7 +887,7 @@ struct RbtNode {
 				KEY const & key)
 		{
 			RH_del_1 successor(NULL, NULL, NULL);
-			return RH_lookup(NULL, this->root, &successor).exec(key);
+			return RH_lookup(NULL, this->root, &successor).exec(this->root, key);
 		}
 
 
