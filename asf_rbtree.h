@@ -271,7 +271,7 @@ struct RbtNode {
 	static void verify_property_2(
 			RbtNode * root)
 	{
-		assert(GetColor(root) == BLACK);
+		assert(BLACK == GetColor(root));
 	}
 
 	// Recursion Helper for verify_property_4()
@@ -292,13 +292,13 @@ struct RbtNode {
 
 			// std::cout << "### verify node with key " << n->key << std::endl;
 
-			if (RbtNode::GetColor(this->current()) == RED)
+			if (GetColor(this->current()) == RED)
 			{
-				assert (RbtNode::GetColor(this->current()->left)   == BLACK);
-				assert (RbtNode::GetColor(this->current()->right)  == BLACK);
+				assert (BLACK == GetColor(this->current()->left));
+				assert (BLACK == GetColor(this->current()->right));
 				if (this->stack_c != NULL)
 				{
-					assert (RbtNode::GetColor(this->stack_c->stack_n) == BLACK);
+					assert (BLACK == GetColor(this->stack_c->stack_n));
 				}
 			}
 			RH_verify_property_4(this, this->current()->left).exec();	// recursion
@@ -389,7 +389,7 @@ struct RbtNode {
 			void insert_postop2(
 					RbtNode *& root)
 			{
-				this->parent()->color = BLACK;
+				this->parent()->color      = BLACK;
 				this->grandparent()->color = RED;
 
 				if (this->current() == this->parent()->left && this->parent() == this->grandparent()->left)
@@ -411,7 +411,7 @@ struct RbtNode {
 				{
 					; /* Tree is still valid */
 				}
-				else if (RbtNode::GetColor(this->sibling()) == RED)
+				else if (GetColor(this->sibling()) == RED)
 				{
 					this->parent()->MakeRed();
 					ret = 2; // do again two levels back in recursion
@@ -439,11 +439,11 @@ struct RbtNode {
 			{
 				int ret = -1;
 
-				if (this->current()->color == BLACK)
+				if (BLACK == this->current()->color)
 				{
 					; /* Tree is still valid */
 				}
-				else if (RbtNode::GetColor(this->sibling()) == RED)
+				else if (RED == GetColor(this->sibling()))
 				{
 					this->parent()->MakeRed();
 					ret = 2; // do again two levels back in recursion
@@ -475,11 +475,11 @@ struct RbtNode {
 				{
 					this->current()->color = BLACK;
 				}
-				else if (this->parent()->color == BLACK)
+				else if (BLACK == this->parent()->color)
 				{
 					; /* Tree is still valid */
 				}
-				else if (RbtNode::GetColor(this->uncle()) == RED)
+				else if (RED == GetColor(this->uncle()))
 				{
 					this->grandparent()->MakeRed();
 					ret = 2; // do again two levels back in recursion
@@ -520,7 +520,7 @@ struct RbtNode {
 				}
 				else if (comp_result < 0)
 				{
-					if (this->current()->left == NULL)
+					if (NULL == this->current()->left)
 					{
 						this->current()->left = node_to_insert;
 						ret = insert_postop1_l(root_node);
@@ -532,7 +532,7 @@ struct RbtNode {
 				}
 				else
 				{
-					if (this->current()->right == NULL)
+					if (NULL == this->current()->right)
 					{
 						this->current()->right = node_to_insert;
 						ret = insert_postop1_r(root_node);
@@ -562,7 +562,7 @@ struct RbtNode {
 		{
 			RbtNode * node_to_insert = new RbtNode(key, value);
 
-			if (this->root == NULL)
+			if (NULL == this->root)
 			{
 				this->root = node_to_insert;
 				this->root->color = BLACK;
@@ -762,89 +762,99 @@ struct RbtNode {
 			            this->rotate_left(this->parent_caller(), root_node);
 			            // the node to delete is now the left node of current()
 			            // -> add another level for next operation
-			            //    see insert_postop1()
+			            RH_del_2(this, this->current()->left, NULL).delete_case3(root_node);
 			        }
 			        else
 			        {
 			            this->rotate_right(this->parent_caller(), root_node);
 			            // the node to delete is now the right node of current()
 			            // -> add another level for next operation
-			            //    see insert_postop1()
+			            RH_del_2(this, this->current()->right, NULL).delete_case3(root_node);
 			        }
 			    }
 
-			    // delete_case3(root_node);
+			    delete_case3(root_node);
 			}
 
-#if 0
 			void delete_case3(
 					RbtNode *& root_node)
 			{
-			    if (node_color(n->parent) == BLACK &&
-			        node_color(sibling(n)) == BLACK &&
-			        node_color(sibling(n)->left) == BLACK &&
-			        node_color(sibling(n)->right) == BLACK)
+			    if (   BLACK == GetColor(this->parent())
+			    	&& BLACK == GetColor(this->sibling())
+			    	&& BLACK == GetColor(this->sibling()->left)
+			    	&& BLACK == GetColor(this->sibling()->right))
 			    {
-			        sibling(n)->color = RED;
-			        delete_case1(t, n->parent);
+			        this->sibling()->color = RED;
+			        // delete_case1(t, n->parent); // TODO: pop back to parent before delete_case1
+			        //                 ^^^^^^^^^
 			    }
 			    else
 			    {
-			        delete_case4(t, n);
+			        delete_case4(root_node);
 			    }
 			}
 
-			void delete_case4(rbtree t, node n) {
-			    if (node_color(n->parent) == RED &&
-			        node_color(sibling(n)) == BLACK &&
-			        node_color(sibling(n)->left) == BLACK &&
-			        node_color(sibling(n)->right) == BLACK)
+			void delete_case4(
+					RbtNode *& root_node)
+			{
+			    if (   RED   == GetColor(this->parent())
+			    	&& BLACK == GetColor(this->sibling())
+			    	&& BLACK == GetColor(this->sibling()->left)
+			    	&& BLACK == GetColor(this->sibling()->right))
 			    {
-			        sibling(n)->color = RED;
-			        n->parent->color = BLACK;
-			    }
-			    else
-			        delete_case5(t, n);
-			}
-
-			void delete_case5(rbtree t, node n) {
-			    if (n == n->parent->left &&
-			        node_color(sibling(n)) == BLACK &&
-			        node_color(sibling(n)->left) == RED &&
-			        node_color(sibling(n)->right) == BLACK)
-			    {
-			        sibling(n)->color = RED;
-			        sibling(n)->left->color = BLACK;
-			        rotate_right(t, sibling(n));
-			    }
-			    else if (n == n->parent->right &&
-			             node_color(sibling(n)) == BLACK &&
-			             node_color(sibling(n)->right) == RED &&
-			             node_color(sibling(n)->left) == BLACK)
-			    {
-			        sibling(n)->color = RED;
-			        sibling(n)->right->color = BLACK;
-			        rotate_left(t, sibling(n));
-			    }
-			    delete_case6(t, n);
-			}
-
-			void delete_case6(rbtree t, node n) {
-			    sibling(n)->color = node_color(n->parent);
-			    n->parent->color = BLACK;
-			    if (n == n->parent->left) {
-			        assert (node_color(sibling(n)->right) == RED);
-			        sibling(n)->right->color = BLACK;
-			        rotate_left(t, n->parent);
+			        this->sibling()->color = RED;
+			        this->parent()->color = BLACK;
 			    }
 			    else
 			    {
-			        assert (node_color(sibling(n)->left) == RED);
-			        sibling(n)->left->color = BLACK;
-			        rotate_right(t, n->parent);
+			        delete_case5(root_node);
 			    }
 			}
-#endif
+
+			void delete_case5(
+					RbtNode *& root_node)
+			{
+			    if (   this->current() == this->parent()->left
+			    	&& BLACK == GetColor(this->sibling())
+			    	&& RED   == GetColor(this->sibling()->left)
+			    	&& BLACK == GetColor(this->sibling()->right))
+			    {
+			        this->sibling()->color       = RED;
+			        this->sibling()->left->color = BLACK;
+			        // rotate_right(t, sibling(n)); // TODO
+			    }
+			    else if (   this->current() == this->parent()->right
+			             && BLACK == GetColor(this->sibling())
+			             && RED   == GetColor(this->sibling()->right)
+			             && BLACK == GetColor(this->sibling()->left))
+			    {
+			        this->sibling()->color = RED;
+			        this->sibling()->right->color = BLACK;
+			        // rotate_left(t, sibling(n)); // TODO
+			    }
+
+			    delete_case6(root_node);
+			}
+
+			void delete_case6(
+					RbtNode *& root_node)
+			{
+			    this->sibling()->color = GetColor(this->parent());
+			    this->parent()->color  = BLACK;
+
+			    if (this->current() == this->parent()->left)
+			    {
+			        assert (RED == GetColor(this->sibling()->right));
+			        this->sibling()->right->color = BLACK;
+			        // rotate_left(t, n->parent); // TODO
+			    }
+			    else
+			    {
+			        assert (RED == GetColor(this->sibling()->left));
+			        this->sibling()->left->color = BLACK;
+			        // rotate_right(t, n->parent); // TODO
+			    }
+			}
 
 			RbtNode * exec(
 					RbtNode *& root_node,
@@ -852,16 +862,17 @@ struct RbtNode {
 			{
 				// RH_Base::PrintStack("del2");
 
-			    assert(this->stack_n->left == NULL || this->stack_n->right == NULL);
+			    assert(NULL == this->stack_n->left || NULL == this->stack_n->right);
 
-			    RbtNode *child = (this->stack_n->right == NULL) ? this->stack_n->left : this->stack_n->right;
+			    RbtNode *child = (NULL == this->stack_n->right) ? this->stack_n->left : this->stack_n->right;
 
 			    if (BLACK == this->current()->color)
 			    {
-			    	this->current()->color = RbtNode::GetColor(child);
+			    	this->current()->color = GetColor(child);
 			    	delete_case1(root_node);
 			    }
 
+//				TODO:
 //			    replace_node(t, n, child);
 
 //			    if (n->parent == NULL && child != NULL)
