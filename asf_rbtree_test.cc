@@ -119,7 +119,9 @@ int main(
 
 		{
 			std::cout << "del(8)" << std::endl;
-			tree.del(8);
+			Node * returned = tree.del(8);
+			std::cout << "return value = " << returned->key << std::endl;
+			delete returned;
 			tree.print();
 		}
 

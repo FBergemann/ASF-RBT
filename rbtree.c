@@ -280,15 +280,22 @@ void insert_case5(rbtree t, node n) {
         rotate_left(t, grandparent(n));
     }
 }
-void rbtree_delete(rbtree t, void* key, compare_func compare) {
+node rbtree_delete(rbtree t, void* key, compare_func compare) {
     node child;
     node n = lookup_node(t, key, compare);
     if (n == NULL) return;  /* Key not found, do nothing */
     if (n->left != NULL && n->right != NULL) {
         /* Copy key/value from predecessor and then delete it instead */
         node pred = maximum_node(n->left);
-        n->key   = pred->key;
-        n->value = pred->value;
+        // swap key and value
+        {
+			void *save_key = n->key;
+			void *save_value = n->value;
+			n->key   = pred->key;
+			n->value = pred->value;
+			pred->key = save_key;
+			pred->value = save_value;
+        }
         n = pred;
     }
 
@@ -301,10 +308,12 @@ void rbtree_delete(rbtree t, void* key, compare_func compare) {
     replace_node(t, n, child);
     if (n->parent == NULL && child != NULL)
         child->color = BLACK;
-    free(n);
 
     verify_properties(t);
+
+    return n;
 }
+
 static node maximum_node(node n) {
     assert (n != NULL);
     while (n->right != NULL) {

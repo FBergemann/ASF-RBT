@@ -650,11 +650,10 @@ struct RbtNode {
 						RH_Base_Ext::successor->SetCaller(this->stack_c); // back to the caller level to avoid additional level
 						RH_Base_Ext::successor->SetNode(this->current());
 
-						return RH_Base_Ext::successor->exec(root_node, key); // early exit
+						return RH_Base_Ext::successor->exec(root_node, key);
 					}
 
-					return this->current(); // early exit
-
+					return this->current();
 				}
 
 				if (comp_result < 0)
@@ -696,8 +695,9 @@ struct RbtNode {
 				{
 					/* Copy key/value from predecessor node and then delete predecessor node instead */
 					RbtNode * pred = current->left->maximum_node();
-					current->key   = pred->key;
-					current->value = pred->value;
+
+					std::swap(current->key, pred->key);
+					std::swap(current->value, pred->value);
 
 					/* WALK to predecessor value and continue with next successor function there */
 					{
@@ -709,7 +709,6 @@ struct RbtNode {
 						RH_del_2 successor(NULL, NULL, NULL);
 						return RH_lookup(this, this->current()->left, &successor).exec(root_node, pred->key);
 					}
-
 				}
 
 				// use current node for next function
@@ -718,7 +717,7 @@ struct RbtNode {
 
 		};
 
-		// Recursion helper #1 for ASF delete operation
+		// Recursion helper #2 for ASF delete operation
 		struct RH_del_2 : public RH_Base_Ext
 		{
 			RH_del_2(
@@ -727,7 +726,6 @@ struct RbtNode {
 					RH_Base_Ext * successor)
 			: RH_Base_Ext(caller, node, successor)
 			{ }
-
 
 			/*
 			 * helper adopted from the C reference implementation
@@ -753,10 +751,6 @@ struct RbtNode {
 			        this->parent()->color  = RED;
 			        this->sibling()->color = BLACK;
 
-		        	// TODO: 	incomplete! - rotate_left() and rotate_right() change the stack
-		        	// 			however for delete the current() node is a leaf node
-		        	//			while rotate_left deals with any node
-		        	//			so it's more generic than required here
 			        if (this->current() == this->parent()->left) // TODO: introduce IsLeft() / IsRight()
 			        {
 			            this->rotate_left(this->parent_caller(), root_node);
@@ -772,8 +766,10 @@ struct RbtNode {
 			            RH_del_2(this, this->current()->right, NULL).delete_case3(root_node);
 			        }
 			    }
-
-			    delete_case3(root_node);
+			    else
+			    {
+			    	delete_case3(root_node);
+			    }
 			}
 
 			void delete_case3(
@@ -821,7 +817,8 @@ struct RbtNode {
 			    {
 			        this->sibling()->color       = RED;
 			        this->sibling()->left->color = BLACK;
-			        // rotate_right(t, sibling(n)); // TODO
+			        // TODO: with delete_case6 tailer
+			        // rotate_right(t, sibling(n));
 			    }
 			    else if (   this->current() == this->parent()->right
 			             && BLACK == GetColor(this->sibling())
@@ -830,10 +827,13 @@ struct RbtNode {
 			    {
 			        this->sibling()->color = RED;
 			        this->sibling()->right->color = BLACK;
-			        // rotate_left(t, sibling(n)); // TODO
+			        // TODO: with delete_case6 tailer
+			        // rotate_left(t, sibling(n));
 			    }
-
-			    delete_case6(root_node);
+			    else
+			    {
+			    	delete_case6(root_node);
+			    }
 			}
 
 			void delete_case6(
@@ -846,13 +846,13 @@ struct RbtNode {
 			    {
 			        assert (RED == GetColor(this->sibling()->right));
 			        this->sibling()->right->color = BLACK;
-			        // rotate_left(t, n->parent); // TODO
+			        this->rotate_left(this->parent_caller(), root_node);
 			    }
 			    else
 			    {
 			        assert (RED == GetColor(this->sibling()->left));
 			        this->sibling()->left->color = BLACK;
-			        // rotate_right(t, n->parent); // TODO
+			        this->rotate_right(this->parent_caller(), root_node);
 			    }
 			}
 
@@ -872,18 +872,14 @@ struct RbtNode {
 			    	delete_case1(root_node);
 			    }
 
-//				TODO:
-//			    replace_node(t, n, child);
+			    this->replace_node(this->current_caller(), child, root_node);
 
-//			    if (n->parent == NULL && child != NULL)
-//			    {
-//			        child->color = BLACK;
-//			    }
-//			    free(n);
-//
-//			    verify_properties(t);
+			    if (NULL == this->parent_caller() && NULL != child)
+			    {
+			        child->color = BLACK;
+			    }
 
-			    return NULL;
+			    return this->current();
 			}
 
 		};

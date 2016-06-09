@@ -234,7 +234,10 @@ int main()
 
 		{
 			printf("del(8)\n");
-			rbtree_delete(t, (void*)8L, compare_long);
+			rbtree_node returned = rbtree_delete(t, (void*)8L, compare_long);
+			printf ("return value = %ld\n", (long)returned->key);;
+			free(returned);
+
 			print_tree(t);
 			puts("");
 		}

@@ -46,6 +46,6 @@ typedef int (*compare_func)(void* left, void* right);
 rbtree rbtree_create();
 void* rbtree_lookup(rbtree t, void* key, compare_func compare);
 void rbtree_insert(rbtree t, void* key, void* value, compare_func compare);
-void rbtree_delete(rbtree t, void* key, compare_func compare);
+rbtree_node rbtree_delete(rbtree t, void* key, compare_func compare);
 
 #endif
