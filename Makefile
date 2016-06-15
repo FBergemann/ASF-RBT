@@ -2,6 +2,8 @@ INSTALL_FILES=\
 	asf_rbt_test \
 	rbt_test
 	
+CXXFLAGS=-g3
+
 all : $(INSTALL_FILES)
 
 clean :
@@ -13,7 +15,7 @@ test : $(INSTALL_FILES)
 	diff out1 out2
 	
 asf_rbt_test : asf_rbtree_test.cc asf_rbtree.h
-	$(CXX) -o $@ $<
+	$(CXX) $(CXXFLAGS) -o $@ $<
 	
 rbt_test : rbtree.c rbtree_test.c
 	$(CC) -o $@ $+

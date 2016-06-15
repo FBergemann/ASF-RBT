@@ -38,7 +38,6 @@ Retrieved from: http://en.literateprograms.org/Red-black_tree_(C)?oldid=18555
 #include <assert.h>
 #include <stdlib.h> /* rand() */
 
-#define INDENT_STEP	(2)
 #undef TRACE
 
 static int compare_long(
@@ -61,48 +60,7 @@ static int compare_long(
 	return 0;
 }
 
-static void print_tree_helper(
-		rbtree_node n,
-		int indent)
-{
-	int i;
 
-	if (NULL == n)
-	{
-    	fputs("<empty tree>", stdout);
-        return; /* early exit */
-	}
-
-	if (n->right != NULL)
-	{
-		print_tree_helper(n->right, indent + INDENT_STEP);
-	}
-
-	for(i=0; i<indent; i++)
-	{
-    	fputs(" ", stdout);
-	}
-
-	if (n->color == RED)
-	{
-    	printf("%ld\n", (long)n->key);
-	}
-	else
-	{
-    	printf("<%ld>\n", (long)n->key);
-	}
-
-	if (n->left != NULL)
-	{
-    	print_tree_helper(n->left, indent + INDENT_STEP);
-	}
-}
-
-static void print_tree(
-		rbtree t)
-{
-	print_tree_helper(t->root, 0);
-}
 
 int main()
 {
@@ -235,6 +193,16 @@ int main()
 		{
 			printf("del(8)\n");
 			rbtree_node returned = rbtree_delete(t, (void*)8L, compare_long);
+			printf ("return value = %ld\n", (long)returned->key);;
+			free(returned);
+
+			print_tree(t);
+			puts("");
+		}
+
+		{
+			printf("del(7)\n");
+			rbtree_node returned = rbtree_delete(t, (void*)7L, compare_long);
 			printf ("return value = %ld\n", (long)returned->key);;
 			free(returned);
 

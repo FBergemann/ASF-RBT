@@ -124,7 +124,15 @@ int main(
 			delete returned;
 			tree.print();
 		}
-
+#if 1
+		{
+			std::cout << "del(7)" << std::endl;
+			Node * returned = tree.del(7);
+			std::cout << "return value = " << returned->key << std::endl;
+			delete returned;
+			tree.print();
+		}
+#endif
 #if 0
 		/*
 		 * TODO: this has to be changed, it can't be compared with C-solution

@@ -27,6 +27,7 @@ Retrieved from: http://en.literateprograms.org/Red-black_tree_(C)?oldid=18555
 #include "rbtree.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h> // TODO
 
 typedef rbtree_node node;
 typedef enum rbtree_node_color color;
@@ -60,6 +61,52 @@ static void delete_case3(rbtree t, node n);
 static void delete_case4(rbtree t, node n);
 static void delete_case5(rbtree t, node n);
 static void delete_case6(rbtree t, node n);
+
+#define INDENT_STEP	(2)
+
+static void print_tree_helper(
+		rbtree_node n,
+		int indent)
+{
+	int i;
+
+	if (NULL == n)
+	{
+    	fputs("<empty tree>", stdout);
+        return; /* early exit */
+	}
+
+	if (n->right != NULL)
+	{
+		print_tree_helper(n->right, indent + INDENT_STEP);
+	}
+
+	for(i=0; i<indent; i++)
+	{
+    	fputs(" ", stdout);
+	}
+
+	if (n->color == RED)
+	{
+    	printf("%ld\n", (long)n->key);
+	}
+	else
+	{
+    	printf("<%ld>\n", (long)n->key);
+	}
+
+	if (n->left != NULL)
+	{
+    	print_tree_helper(n->left, indent + INDENT_STEP);
+	}
+}
+
+void print_tree(
+		rbtree t)
+{
+	print_tree_helper(t->root, 0);
+	printf("-----\n");
+}
 
 node grandparent(node n) {
     assert (n != NULL);
@@ -309,6 +356,8 @@ node rbtree_delete(rbtree t, void* key, compare_func compare) {
     if (n->parent == NULL && child != NULL)
         child->color = BLACK;
 
+    print_tree(t);
+
     verify_properties(t);
 
     return n;
@@ -322,23 +371,32 @@ static node maximum_node(node n) {
     return n;
 }
 void delete_case1(rbtree t, node n) {
+	printf("delete_case1\n");
     if (n->parent == NULL)
         return;
     else
         delete_case2(t, n);
 }
 void delete_case2(rbtree t, node n) {
+	printf("delete_case2\n");
     if (node_color(sibling(n)) == RED) {
+
+    	printf(" rotate for %ld\n", (long) n->key); // TODO
+    	print_tree(t);
+
         n->parent->color = RED;
         sibling(n)->color = BLACK;
         if (n == n->parent->left)
             rotate_left(t, n->parent);
         else
             rotate_right(t, n->parent);
+
+        print_tree(t);
     }
     delete_case3(t, n);
 }
 void delete_case3(rbtree t, node n) {
+	printf("delete_case3\n");
     if (node_color(n->parent) == BLACK &&
         node_color(sibling(n)) == BLACK &&
         node_color(sibling(n)->left) == BLACK &&
@@ -351,18 +409,23 @@ void delete_case3(rbtree t, node n) {
         delete_case4(t, n);
 }
 void delete_case4(rbtree t, node n) {
+	printf("delete_case4\n");
+	print_tree(t);
     if (node_color(n->parent) == RED &&
         node_color(sibling(n)) == BLACK &&
         node_color(sibling(n)->left) == BLACK &&
         node_color(sibling(n)->right) == BLACK)
     {
+    	printf(" change color\n");
         sibling(n)->color = RED;
         n->parent->color = BLACK;
+        print_tree(t);
     }
     else
         delete_case5(t, n);
 }
 void delete_case5(rbtree t, node n) {
+	printf("delete_case5\n");
     if (n == n->parent->left &&
         node_color(sibling(n)) == BLACK &&
         node_color(sibling(n)->left) == RED &&
@@ -384,6 +447,9 @@ void delete_case5(rbtree t, node n) {
     delete_case6(t, n);
 }
 void delete_case6(rbtree t, node n) {
+	printf("delete_case6\n");
+	print_tree(t);
+
     sibling(n)->color = node_color(n->parent);
     n->parent->color = BLACK;
     if (n == n->parent->left) {

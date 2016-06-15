@@ -58,7 +58,7 @@ struct RbtNode {
 		}
 		else
 		{
-        		std::cout << '<' << this->key << '>' << std::endl;
+        	std::cout << '<' << this->key << '>' << std::endl;
 		}
 
 		if (this->left != NULL)
@@ -205,24 +205,64 @@ struct RbtNode {
 			}
 		}
 
+		/*
+		 * see e.g. https://de.wikipedia.org/wiki/Rot-Schwarz-Baum
+		 *
+		 *           P                                    S
+		 *       /      \                             /       \
+		 *      N        (S)                        (P)       SR
+		 *    /  \     /    \           =>        /    \     /  \
+		 *   1    2   SL     SR                  N      SL  5    6
+		 *           / \     / \               /  \    / \
+		 *          3   4   5   6             1    2  3   4
+		 *
+		 *  When used for delete operation in delete_case2 then TODO...
+		 */
 		void rotate_left(
 				RH_Base * caller,
 				RbtNode *& root)
 		{
-			RbtNode * R = caller->stack_n->right;
-			replace_node(caller, R, root);
-			caller->stack_n->right = R->left;
-			R->left = caller->stack_n;
+			RbtNode * R = caller->stack_n->right;   // R = (S)
+			replace_node(caller, R, root);          // (S) to the top replacing P
+			caller->stack_n->right = R->left;       // P->right = (S)->left = SL
+			R->left = caller->stack_n;              // (S)->left = P
 		}
 
+		void rotate_left_adjust_stack()
+		{
+			assert (NULL != NULL); // TODO: not yet implemented
+		}
+
+		/*
+		 * see e.g. https://de.wikipedia.org/wiki/Rot-Schwarz-Baum
+		 *
+		 *           P                             S
+		 *       /      \                     /         \
+		 *      S        N                  SL           P
+		 *    /    \     /\      =>        /  \       /     \
+		 *   SL     SR  5  6              1     2    SR      N
+		 *  / \     / \                             /  \    /  \
+ 		 * 1   2   3   4                           3    4   5   6
+		 *
+		 *  When used for delete operation in delete_case2 then the node to delete is N.
+		 *  And it does NOT have a right node (6).
+		 *  Because we looked for some right-most ancestor before.
+		 *
+		 */
 		void rotate_right(
 				RH_Base * caller,
 				RbtNode *& root)
 		{
-			RbtNode * L = caller->stack_n->left;
-			replace_node(caller, L, root);
-			caller->stack_n->left = L->right;
-			L->right = caller->stack_n;
+			RbtNode * L = caller->stack_n->left;	// L = S
+			replace_node(caller, L, root);			// S to the top replacing P
+			caller->stack_n->left = L->right;		// P->left = S->right = SR
+			L->right = caller->stack_n;				// S->right = P
+		}
+
+		void rotate_right_adjust_stack()
+		{
+			this->parent_caller()->stack_n  = this->grandparent_caller()->stack_n->left;
+			this->current_caller()->stack_n = this->parent_caller()->stack_n->right;
 		}
 
 		void PrintStack(
@@ -353,6 +393,15 @@ struct RbtNode {
 		: root(NULL)
 		{ }
 
+		Tree(RbtNode * node)
+		: root(node)
+		{ }
+
+		static void print(RbtNode * node)
+		{
+			Tree(node).print();
+		}
+
 		void print(void)
 		{
 			if (root == NULL)
@@ -362,7 +411,7 @@ struct RbtNode {
 			}
 
 			this->root->print(0);
-			std::cout << std::endl;
+			std::cout << std::endl << "-----" << std::endl;
 		}
 
 		void verify_properties(void)
@@ -647,7 +696,10 @@ struct RbtNode {
 
 					if (NULL != RH_Base_Ext::successor)
 					{
-						RH_Base_Ext::successor->SetCaller(this->stack_c); // back to the caller level to avoid additional level
+						/*
+						 * merge with successor: but back to the caller level to avoid an additional stack level
+						 */
+						RH_Base_Ext::successor->SetCaller(this->parent_caller());
 						RH_Base_Ext::successor->SetNode(this->current());
 
 						return RH_Base_Ext::successor->exec(root_node, key);
@@ -674,6 +726,34 @@ struct RbtNode {
 			return RH_lookup(NULL, this->root, NULL).exec(this->root, key);
 		}
 
+		/**
+		 * A RH_Base::replace_node post-processing helper
+		 */
+		struct RH_replace_node : public RH_Base_Ext
+		{
+			RbtNode * _newNode;
+
+			RH_replace_node(
+					RH_Base * caller,
+					RbtNode * node,
+					RH_Base_Ext * successor,
+					RbtNode * newNode)
+			: RH_Base_Ext(caller, node, successor),
+			  _newNode(newNode)
+			{
+
+			}
+
+			RbtNode * exec(
+					RbtNode *& root_node,
+					KEY const & key)
+			{
+				std::cout << "RH_replace_node::exec()" << std::endl;
+				RbtNode * oldNode = this->current();
+				this->replace_node(this->current_caller(), _newNode, root_node);
+				return oldNode;
+			}
+		};
 
 		// Recursion helper #1 for ASF delete operation
 		struct RH_del_1 : public RH_Base_Ext
@@ -711,8 +791,10 @@ struct RbtNode {
 					}
 				}
 
-				// use current node for next function
-				return RH_del_2(this, this->current(), NULL).exec(root_node, key);
+				/*
+				 * merge with RH_del_2 w/o introducing another stack level
+				 */
+				return RH_del_2(this->parent_caller(), this->current(), NULL).exec(root_node, key);
 			}
 
 		};
@@ -733,6 +815,8 @@ struct RbtNode {
 			void delete_case1(
 					RbtNode *& root_node)
 			{
+				std::cout << "delete_case1" << std::endl;
+
 			    if (NULL == this->parent())
 			    {
 			        return;
@@ -746,28 +830,45 @@ struct RbtNode {
 			void delete_case2(
 					RbtNode *& root_node)
 			{
+				std::cout << "delete_case2" << std::endl;
+				std::cout << "this->sibling()->key = " << this->sibling()->key << std::endl;
+
 			    if (RED == GetColor(this->sibling()))
 			    {
+			    	std::cout << " rotate for " << this->current()->key << std::endl;
+			    	Tree::print(root_node);
+			    	this->PrintStack("stack");
+
 			        this->parent()->color  = RED;
 			        this->sibling()->color = BLACK;
 
 			        if (this->current() == this->parent()->left) // TODO: introduce IsLeft() / IsRight()
 			        {
+			        	std::cout << " rotate left" << std::endl;
 			            this->rotate_left(this->parent_caller(), root_node);
+			            this->rotate_left_adjust_stack();
+			            Tree::print(root_node);
+			            this->PrintStack("");
 			            // the node to delete is now the left node of current()
 			            // -> add another level for next operation
 			            RH_del_2(this, this->current()->left, NULL).delete_case3(root_node);
 			        }
 			        else
 			        {
+			        	std::cout << " rotate right" << std::endl;
 			            this->rotate_right(this->parent_caller(), root_node);
+			            this->rotate_right_adjust_stack();
+			            Tree::print(root_node);
+			            this->PrintStack("");
 			            // the node to delete is now the right node of current()
 			            // -> add another level for next operation
+			            std::cout << " this->current()->key is now:  " << this->current()->key << std::endl;
 			            RH_del_2(this, this->current()->right, NULL).delete_case3(root_node);
 			        }
 			    }
 			    else
 			    {
+			    	std::cout << " no rotate" << std::endl;
 			    	delete_case3(root_node);
 			    }
 			}
@@ -775,14 +876,17 @@ struct RbtNode {
 			void delete_case3(
 					RbtNode *& root_node)
 			{
+				std::cout << "delete_case3" << std::endl;
+				this->PrintStack("stack");
+
 			    if (   BLACK == GetColor(this->parent())
 			    	&& BLACK == GetColor(this->sibling())
 			    	&& BLACK == GetColor(this->sibling()->left)
 			    	&& BLACK == GetColor(this->sibling()->right))
 			    {
 			        this->sibling()->color = RED;
-			        // delete_case1(t, n->parent); // TODO: pop back to parent before delete_case1
-			        //                 ^^^^^^^^^
+			        std::cout << "implementation incomplete!" << std::endl << std::flush;
+			        static_cast<RH_del_2*>(this->parent_caller())->delete_case1(root_node); // TODO: i am not sure, if this works
 			    }
 			    else
 			    {
@@ -793,13 +897,19 @@ struct RbtNode {
 			void delete_case4(
 					RbtNode *& root_node)
 			{
+				std::cout << "delete_case4" << std::endl;
+				this->PrintStack("stack");
+				Tree::print(root_node);
+
 			    if (   RED   == GetColor(this->parent())
 			    	&& BLACK == GetColor(this->sibling())
 			    	&& BLACK == GetColor(this->sibling()->left)
 			    	&& BLACK == GetColor(this->sibling()->right))
 			    {
+			    	std::cout << " change color" << std::endl;
 			        this->sibling()->color = RED;
 			        this->parent()->color = BLACK;
+			        Tree::print(root_node);
 			    }
 			    else
 			    {
@@ -810,6 +920,9 @@ struct RbtNode {
 			void delete_case5(
 					RbtNode *& root_node)
 			{
+				std::cout << "delete_case5" << std::endl;
+				this->PrintStack("stack");
+
 			    if (   this->current() == this->parent()->left
 			    	&& BLACK == GetColor(this->sibling())
 			    	&& RED   == GetColor(this->sibling()->left)
@@ -817,6 +930,7 @@ struct RbtNode {
 			    {
 			        this->sibling()->color       = RED;
 			        this->sibling()->left->color = BLACK;
+			        std::cout << "implementation incomplete!" << std::endl << std::flush;
 			        // TODO: with delete_case6 tailer
 			        // rotate_right(t, sibling(n));
 			    }
@@ -827,6 +941,7 @@ struct RbtNode {
 			    {
 			        this->sibling()->color = RED;
 			        this->sibling()->right->color = BLACK;
+			        std::cout << "implementation incomplete!" << std::endl << std::flush;
 			        // TODO: with delete_case6 tailer
 			        // rotate_left(t, sibling(n));
 			    }
@@ -839,6 +954,9 @@ struct RbtNode {
 			void delete_case6(
 					RbtNode *& root_node)
 			{
+				std::cout << "delete_case6" << std::endl;
+				Tree::print(root_node);
+
 			    this->sibling()->color = GetColor(this->parent());
 			    this->parent()->color  = BLACK;
 
@@ -860,11 +978,12 @@ struct RbtNode {
 					RbtNode *& root_node,
 					KEY const & key)
 			{
-				// RH_Base::PrintStack("del2");
-
 			    assert(NULL == this->stack_n->left || NULL == this->stack_n->right);
 
 			    RbtNode *child = (NULL == this->stack_n->right) ? this->stack_n->left : this->stack_n->right;
+			    RbtNode *old_curr_node = this->current();
+
+			    std::cout << "current()->key = " << this->current()->key << std::endl;
 
 			    if (BLACK == this->current()->color)
 			    {
@@ -872,14 +991,31 @@ struct RbtNode {
 			    	delete_case1(root_node);
 			    }
 
-			    this->replace_node(this->current_caller(), child, root_node);
+			    this->PrintStack("back in exec");
+			    Tree::print(root_node);
+			    std::cout << "current()->key = " << this->current()->key << std::endl;
+			    std::cout << "old_curr_node->key = " << old_curr_node->key << std::endl;
+
+			    child = (NULL == old_curr_node->right) ? old_curr_node->left : old_curr_node->right;
+			    std::cout << "child->key = " << (long)((NULL == child) ? -1L : (long)(child->key)) << std::endl;
+
+			    /*
+			     * search for old_curr_node
+			     * but merge current level with 1st RH_lookup level
+			     * When found let it replace the node.
+			     */
+			    RbtNode * oldNode = NULL;
+			    {
+			    	RH_replace_node replaceNode(NULL, NULL, NULL, child);
+			    	oldNode = RH_lookup(this->parent_caller(), this->current(), &replaceNode).exec(root_node, old_curr_node->key);
+			    }
 
 			    if (NULL == this->parent_caller() && NULL != child)
 			    {
 			        child->color = BLACK;
 			    }
 
-			    return this->current();
+			    return oldNode;
 			}
 
 		};
@@ -894,7 +1030,13 @@ struct RbtNode {
 				KEY const & key)
 		{
 			RH_del_1 successor(NULL, NULL, NULL);
-			return RH_lookup(NULL, this->root, &successor).exec(this->root, key);
+			RbtNode *node = RH_lookup(NULL, this->root, &successor).exec(this->root, key);
+
+			Tree::print(this->root);
+
+		    verify_properties();
+
+		    return node;
 		}
 
 
