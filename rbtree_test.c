@@ -61,6 +61,20 @@ static int compare_long(
 }
 
 
+static void
+delete_helper(
+		rbtree * t,
+		long key)
+{
+	printf("del(%ld)\n", key);
+	rbtree_node returned = rbtree_delete(*t, (void*)key, compare_long);
+	printf ("return value = %ld\n", (long)returned->key);;
+	free(returned);
+
+	print_tree(*t);
+	puts("");
+}
+
 
 int main()
 {
@@ -190,25 +204,14 @@ int main()
 		 * some del(ete) tests
 		 */
 
-		{
-			printf("del(8)\n");
-			rbtree_node returned = rbtree_delete(t, (void*)8L, compare_long);
-			printf ("return value = %ld\n", (long)returned->key);;
-			free(returned);
-
-			print_tree(t);
-			puts("");
-		}
-
-		{
-			printf("del(7)\n");
-			rbtree_node returned = rbtree_delete(t, (void*)7L, compare_long);
-			printf ("return value = %ld\n", (long)returned->key);;
-			free(returned);
-
-			print_tree(t);
-			puts("");
-		}
+		delete_helper(&t, 8L);
+		delete_helper(&t, 7L);
+		delete_helper(&t, 12L);
+		delete_helper(&t, 19L);
+		delete_helper(&t, 18L);
+		delete_helper(&t, 17L);
+		delete_helper(&t, 11L);
+		delete_helper(&t, 0L);
 
 #if 0
 		/*

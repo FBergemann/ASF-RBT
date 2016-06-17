@@ -8,11 +8,24 @@
 
 #include "asf_rbtree.h"
 
+typedef RbtNode<int, int> Node;
+
+static void
+delete_helper(
+		Node::Tree & tree,
+		int key)
+{
+	std::cout << "del(" << key << ")" << std::endl;
+	Node * returned = tree.del(key);
+	std::cout << "return value = " << returned->key << std::endl;
+	delete returned;
+	tree.print();
+}
+
 int main(
 		int,
 		char**)
 {
-	typedef RbtNode<int, int> Node;
 
 	{
 		std::cout << "=== TREE 0 (empty) - BEGIN ===" << std::endl;
@@ -117,22 +130,16 @@ int main(
 		 * some del(ete) tests
 		 */
 
-		{
-			std::cout << "del(8)" << std::endl;
-			Node * returned = tree.del(8);
-			std::cout << "return value = " << returned->key << std::endl;
-			delete returned;
-			tree.print();
-		}
-#if 1
-		{
-			std::cout << "del(7)" << std::endl;
-			Node * returned = tree.del(7);
-			std::cout << "return value = " << returned->key << std::endl;
-			delete returned;
-			tree.print();
-		}
-#endif
+		delete_helper(tree, 8);
+		delete_helper(tree, 7);
+		delete_helper(tree, 12);
+		delete_helper(tree, 19);
+
+		delete_helper(tree, 18);
+		delete_helper(tree, 17);
+		delete_helper(tree, 11);
+		delete_helper(tree, 0);
+
 #if 0
 		/*
 		 * TODO: this has to be changed, it can't be compared with C-solution

@@ -330,7 +330,7 @@ void insert_case5(rbtree t, node n) {
 node rbtree_delete(rbtree t, void* key, compare_func compare) {
     node child;
     node n = lookup_node(t, key, compare);
-    if (n == NULL) return;  /* Key not found, do nothing */
+    if (n == NULL) return NULL;  /* Key not found, do nothing */
     if (n->left != NULL && n->right != NULL) {
         /* Copy key/value from predecessor and then delete it instead */
         node pred = maximum_node(n->left);
@@ -387,9 +387,15 @@ void delete_case2(rbtree t, node n) {
         n->parent->color = RED;
         sibling(n)->color = BLACK;
         if (n == n->parent->left)
+        {
+        	printf(" rotate left\n");
             rotate_left(t, n->parent);
+        }
         else
+        {
+        	printf(" rotate right\n");
             rotate_right(t, n->parent);
+        }
 
         print_tree(t);
     }

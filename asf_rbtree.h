@@ -231,6 +231,24 @@ struct RbtNode {
 		void rotate_left_adjust_stack()
 		{
 			assert (NULL != NULL); // TODO: not yet implemented
+#if 0
+			/*
+			 * Rotation shifted down the node to delete
+			 * But the structure up to the parent is still the same
+			 * However the parent itself changed
+			 */
+			// was the parent on the left side of the grandparent?
+			if (this->grandparent()->key > this->parent()->key)
+			{
+				this->parent()  = this->grandparent()->left;
+			}
+			else
+			{
+				this->parent()  = this->grandparent()->right;
+			}
+
+			this->current() = this->parent()->left; // TODO: not sure about that - to be verified
+#endif
 		}
 
 		/*
@@ -261,8 +279,22 @@ struct RbtNode {
 
 		void rotate_right_adjust_stack()
 		{
-			this->parent_caller()->stack_n  = this->grandparent_caller()->stack_n->left;
-			this->current_caller()->stack_n = this->parent_caller()->stack_n->right;
+			/*
+			 * Rotation shifted down the node to delete
+			 * But the structure up to the parent is still the same
+			 * However the parent itself changed
+			 */
+			// was the parent on the left side of the grandparent?
+			if (this->grandparent()->key > this->parent()->key)
+			{
+				this->parent() = this->grandparent()->left;
+			}
+			else
+			{
+				this->parent()  = this->grandparent()->right;
+			}
+
+			this->current() = this->parent()->right;
 		}
 
 		void PrintStack(
@@ -857,7 +889,10 @@ struct RbtNode {
 			        {
 			        	std::cout << " rotate right" << std::endl;
 			            this->rotate_right(this->parent_caller(), root_node);
+			            this->PrintStack("stack1");
+			            Tree::print(root_node);
 			            this->rotate_right_adjust_stack();
+			            this->PrintStack("stack2");
 			            Tree::print(root_node);
 			            this->PrintStack("");
 			            // the node to delete is now the right node of current()
@@ -885,7 +920,7 @@ struct RbtNode {
 			    	&& BLACK == GetColor(this->sibling()->right))
 			    {
 			        this->sibling()->color = RED;
-			        std::cout << "implementation incomplete!" << std::endl << std::flush;
+			        std::cout << "critical implementation" << std::endl << std::flush;
 			        static_cast<RH_del_2*>(this->parent_caller())->delete_case1(root_node); // TODO: i am not sure, if this works
 			    }
 			    else
