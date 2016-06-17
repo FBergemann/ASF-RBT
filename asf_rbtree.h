@@ -13,6 +13,12 @@
 #include <iostream>
 #include <iomanip>
 
+#if TRACE >= 2
+#define PRINT_STACK(a)		this->PrintStack(a);
+#else
+#define PRINT_STACK(a)
+#endif
+
 // TODO: add support for rvalue references
 template <typename KEY, typename VALUE>
 struct RbtNode {
@@ -235,7 +241,8 @@ struct RbtNode {
 			/*
 			 * Rotation shifted down the node to delete
 			 * But the structure up to the parent is still the same
-			 * However the parent itself changed
+			 * However the parent and the current node values itself changed.
+			 * -> update the stack
 			 */
 			// was the parent on the left side of the grandparent?
 			if (this->grandparent()->key > this->parent()->key)
@@ -282,7 +289,8 @@ struct RbtNode {
 			/*
 			 * Rotation shifted down the node to delete
 			 * But the structure up to the parent is still the same
-			 * However the parent itself changed
+			 * However the parent and the current node values itself changed.
+			 * -> update the stack
 			 */
 			// was the parent on the left side of the grandparent?
 			if (this->grandparent()->key > this->parent()->key)
@@ -780,7 +788,6 @@ struct RbtNode {
 					RbtNode *& root_node,
 					KEY const & key)
 			{
-				std::cout << "RH_replace_node::exec()" << std::endl;
 				RbtNode * oldNode = this->current();
 				this->replace_node(this->current_caller(), _newNode, root_node);
 				return oldNode;
@@ -863,13 +870,13 @@ struct RbtNode {
 					RbtNode *& root_node)
 			{
 				std::cout << "delete_case2" << std::endl;
-				std::cout << "this->sibling()->key = " << this->sibling()->key << std::endl;
 
 			    if (RED == GetColor(this->sibling()))
 			    {
 			    	std::cout << " rotate for " << this->current()->key << std::endl;
 			    	Tree::print(root_node);
-			    	this->PrintStack("stack");
+
+			    	PRINT_STACK("stack");
 
 			        this->parent()->color  = RED;
 			        this->sibling()->color = BLACK;
@@ -880,7 +887,9 @@ struct RbtNode {
 			            this->rotate_left(this->parent_caller(), root_node);
 			            this->rotate_left_adjust_stack();
 			            Tree::print(root_node);
-			            this->PrintStack("");
+
+			            PRINT_STACK("stack")
+
 			            // the node to delete is now the left node of current()
 			            // -> add another level for next operation
 			            RH_del_2(this, this->current()->left, NULL).delete_case3(root_node);
@@ -889,21 +898,18 @@ struct RbtNode {
 			        {
 			        	std::cout << " rotate right" << std::endl;
 			            this->rotate_right(this->parent_caller(), root_node);
-			            this->PrintStack("stack1");
-			            Tree::print(root_node);
 			            this->rotate_right_adjust_stack();
-			            this->PrintStack("stack2");
 			            Tree::print(root_node);
-			            this->PrintStack("");
+
+			            PRINT_STACK("stack")
+
 			            // the node to delete is now the right node of current()
 			            // -> add another level for next operation
-			            std::cout << " this->current()->key is now:  " << this->current()->key << std::endl;
 			            RH_del_2(this, this->current()->right, NULL).delete_case3(root_node);
 			        }
 			    }
 			    else
 			    {
-			    	std::cout << " no rotate" << std::endl;
 			    	delete_case3(root_node);
 			    }
 			}
@@ -912,7 +918,8 @@ struct RbtNode {
 					RbtNode *& root_node)
 			{
 				std::cout << "delete_case3" << std::endl;
-				this->PrintStack("stack");
+
+				PRINT_STACK("stack");
 
 			    if (   BLACK == GetColor(this->parent())
 			    	&& BLACK == GetColor(this->sibling())
@@ -933,7 +940,9 @@ struct RbtNode {
 					RbtNode *& root_node)
 			{
 				std::cout << "delete_case4" << std::endl;
-				this->PrintStack("stack");
+
+				PRINT_STACK("stack");
+
 				Tree::print(root_node);
 
 			    if (   RED   == GetColor(this->parent())
@@ -956,7 +965,8 @@ struct RbtNode {
 					RbtNode *& root_node)
 			{
 				std::cout << "delete_case5" << std::endl;
-				this->PrintStack("stack");
+
+				PRINT_STACK("stack");
 
 			    if (   this->current() == this->parent()->left
 			    	&& BLACK == GetColor(this->sibling())
@@ -1018,21 +1028,13 @@ struct RbtNode {
 			    RbtNode *child = (NULL == this->stack_n->right) ? this->stack_n->left : this->stack_n->right;
 			    RbtNode *old_curr_node = this->current();
 
-			    std::cout << "current()->key = " << this->current()->key << std::endl;
-
 			    if (BLACK == this->current()->color)
 			    {
 			    	this->current()->color = GetColor(child);
 			    	delete_case1(root_node);
 			    }
 
-			    this->PrintStack("back in exec");
-			    Tree::print(root_node);
-			    std::cout << "current()->key = " << this->current()->key << std::endl;
-			    std::cout << "old_curr_node->key = " << old_curr_node->key << std::endl;
-
 			    child = (NULL == old_curr_node->right) ? old_curr_node->left : old_curr_node->right;
-			    std::cout << "child->key = " << (long)((NULL == child) ? -1L : (long)(child->key)) << std::endl;
 
 			    /*
 			     * search for old_curr_node

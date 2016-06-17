@@ -4,7 +4,7 @@
 #include <sstream>
 
 #define VERIFY_RBTREE
-#define TRACE
+#define TRACE			1 // #0: off, higher value, more verbose
 
 #include "asf_rbtree.h"
 
