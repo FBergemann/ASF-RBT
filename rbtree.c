@@ -72,7 +72,7 @@ static void print_tree_helper(
 
 	if (NULL == n)
 	{
-    	fputs("<empty tree>", stdout);
+    	fputs("<empty tree>\n", stdout);
         return; /* early exit */
 	}
 
@@ -330,7 +330,10 @@ void insert_case5(rbtree t, node n) {
 node rbtree_delete(rbtree t, void* key, compare_func compare) {
     node child;
     node n = lookup_node(t, key, compare);
-    if (n == NULL) return NULL;  /* Key not found, do nothing */
+    if (n == NULL) {
+    	print_tree(t);
+    	return NULL;  /* Key not found, do nothing */
+    }
     if (n->left != NULL && n->right != NULL) {
         /* Copy key/value from predecessor and then delete it instead */
         node pred = maximum_node(n->left);

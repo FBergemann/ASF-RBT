@@ -72,7 +72,6 @@ delete_helper(
 	free(returned);
 
 	print_tree(*t);
-	puts("");
 }
 
 
@@ -87,12 +86,10 @@ int main()
 		t = rbtree_create();
 
 		print_tree(t);
-		puts("");
 
 		rbtree_delete(t, (void*)19L, compare_long); /* check, it doesn't harm */
 
 		print_tree(t);
-		puts("");
 
 		free(t);
 
@@ -116,7 +113,6 @@ int main()
 		}
 
 		print_tree(t);
-		puts("");
 
 		free(t);
 
@@ -141,7 +137,6 @@ int main()
 		}
 
 		print_tree(t);
-		puts("");
 
 		free(t);
 
@@ -166,7 +161,6 @@ int main()
 		}
 
 		print_tree(t);
-		puts("");
 
 		/*
 		 * some lookup tests

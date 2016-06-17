@@ -55,7 +55,6 @@ struct RbtNode {
 			this->right->print(indent + indent_step);
 		}
 
-
 		std::cout << std::string(indent, ' ');
 
 		if (this->color == RED)
@@ -447,11 +446,12 @@ struct RbtNode {
 			if (root == NULL)
 			{
 				std::cout << "<empty tree>" << std::endl;
-				return;
 			}
-
-			this->root->print(0);
-			std::cout << std::endl << "-----" << std::endl;
+			else
+			{
+				this->root->print(0);
+			}
+			std::cout << "-----" << std::endl;
 		}
 
 		void verify_properties(void)
